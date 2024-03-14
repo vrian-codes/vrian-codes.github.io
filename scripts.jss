@@ -60,7 +60,7 @@ Type 'help' to list all available commands.`;
               ?error                                                      ?error                                                      ?error
         
   `;                        
-                } else if (cmd === 'store') {
+                } else if (cmd === 'contact') {
                     output.textContent += '\nX:vriannn \nPhone: 657-273-1134';
                 } else if (cmd === 'date') {
                         const currentDate = new Date();
