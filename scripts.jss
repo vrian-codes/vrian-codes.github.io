@@ -1,90 +1,46 @@
-        const output = document.getElementById('output');
-        const input = document.getElementById('input');
-        const prompt = document.getElementById('prompt');
-        const introText = `
-                            ⠀⠀⠀⠀⠀⠀   ⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣄⣠⣀⡀⣀⣠⣤⣤⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                           ⠀⠀⠀⠀   ⠀⠀⠀⠀⠀⠀⣄⢠⣠⣼⣿⣿⣿⣟⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠀⠀⠀⢠⣤⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠰⢦⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                           ⠀    ⠀⠀⠀⠀⠀⠀⠀⣼⣿⣟⣾⣿⣽⣿⣿⣅⠈⠉⠻⣿⣿⣿⣿⣿⡿⠇⠀⠀⠀⠀⠀⠉⠀⠀⠀⠀⠀⢀⡶⠒⢉⡀⢠⣤⣶⣶⣿⣷⣆⣀⡀⠀⢲⣖⠒⠀⠀⠀⠀⠀⠀⠀
-                              ⢀⣤⣾⣶⣦⣤⣤⣶⣿⣿⣿⣿⣿⣿⣽⡿⠻⣷⣀⠀⢻⣿⣿⣿⡿⠟⠀⠀⠀⠀⠀⠀⣤⣶⣶⣤⣀⣀⣬⣷⣦⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣦⣤⣦⣼⣀⠀
-                              ⠈⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠛⠓⣿⣿⠟⠁⠘⣿⡟⠁⠀⠘⠛⠁⠀⠀⢠⣾⣿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠏⠙⠁
-                              ⠀⠸⠟⠋⠀⠈⠙⣿⣿⣿⣿⣿⣿⣷⣦⡄⣿⣿⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⣼⣆⢘⣿⣯⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡉⠉⢱⡿⠀⠀⠀⠀⠀
-                           ⠀⠀⠀   ⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣟⡿⠦⠀⠀⠀⠀⠀⠀⠀⠙⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⡗⠀⠈⠀⠀⠀⠀⠀⠀
-                           ⠀⠀⠀   ⠀⠀⠀⠀⠀⢻⣿⣿⣿⣿⣿⣿⣿⣿⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⢿⣿⣉⣿⡿⢿⢷⣾⣾⣿⣞⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠋⣠⠟⠀⠀⠀⠀⠀⠀⠀⠀
-                           ⠀⠀   ⠀⠀⠀⠀⠀⠀⠀⠹⣿⣿⣿⠿⠿⣿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣾⣿⣿⣷⣦⣶⣦⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠈⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                               ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠻⣿⣤⡖⠛⠶⠤⡀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠁⠙⣿⣿⠿⢻⣿⣿⡿⠋⢩⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                           ⠀   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⠧⣤⣦⣤⣄⡀⠀⠀⠀⠀⠀⠘⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠘⣧⠀⠈⣹⡻⠇⢀⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                              ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⣿⣤⣀⡀⠀⠀⠀⠀⠀⠀⠈⢽⣿⣿⣿⣿⣿⠋⠀⠀⠀⠀⠀⠀⠀⠀⠹⣷⣴⣿⣷⢲⣦⣤⡀⢀⡀⠀⠀⠀⠀⠀⠀
-                               ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢿⣿⣿⣿⣿⣿⣿⠟⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿⣷⢀⡄⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠂⠛⣆⣤⡜⣟⠋⠙⠂⠀⠀⠀⠀⠀
-                              ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣿⣿⣿⣿⠟⠀⠀⠀⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⠉⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣤⣾⣿⣿⣿⣿⣆⠀⠰⠄⠀⠉⠀⠀
-                              ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⡿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣿⡿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣿⠿⠿⣿⣿⣿⠇⠀⠀⢀⠀⠀⠀
-                              ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣿⡿⠛⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢻⡇⠀⠀⢀⣼⠗⠀⠀
-                              ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠃⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠁⠀⠀⠀
-                              ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠒⠀⠀⠀⠀⠀⠀⠀
---
-Type 'help' to list all available commands.`;
-        let charIndex = 0;
+document.addEventListener("DOMContentLoaded", function () {
+    const output = document.getElementById('output');
+    const input = document.getElementById('input');
+    const prompt = document.getElementById('prompt');
+    const introText = `Welcome to Brian's World! Type 'help' to list all available commands.`;
+    let charIndex = 0;
 
-        function typeIntroText() {
-            if (charIndex < introText.length) {
-                output.textContent += introText.charAt(charIndex);
-                charIndex++;
-                setTimeout(typeIntroText, 0.5); // Adjust the typing speed (milliseconds per character)
+    function typeIntroText() {
+        if (charIndex < introText.length) {
+            output.textContent += introText.charAt(charIndex);
+            charIndex++;
+            setTimeout(typeIntroText, 5); // Adjust the typing speed (5 ms per character for visibility)
+        }
+    }
+
+    input.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            const cmd = input.value.trim();
+            input.value = '';
+            output.textContent += '\n' + prompt.textContent + cmd;
+            switch (cmd.toLowerCase()) {
+                case 'help':
+                    output.textContent += '\nCommands: DATE, CONTACT, LOCATION, STORE';
+                    break;
+                case 'date':
+                    const currentDate = new Date();
+                    output.textContent += `\nLocal Date and Time: ${currentDate.toLocaleString()}`;
+                    break;
+                case 'location':
+                    const locations = ['Supercharged', 'Tacos and Tequila', 'Philadelphia', 'Around'];
+                    const currentHour = new Date().getHours();
+                    if (currentHour >= 7 && currentHour < 15) {
+                        output.textContent += '\nBrian is at work';
+                    } else {
+                        const selectedLocation = locations[Math.floor(Math.random() * locations.length)];
+                        output.textContent += `\nLocation: ${selectedLocation}`;
+                    }
+                    break;
+                default:
+                    output.textContent += '\nUnknown command.';
             }
         }
+    });
 
-        input.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                const cmd = input.value;
-                input.value = '';
-                output.textContent += '\n' + prompt.textContent + ' ' + cmd;
-                if (cmd === 'help') {
-                    output.textContent += '\nDATE         Displays time and date\nCONTACT      Displays contact information\nLOCATION     Displays brians current location\nSTORE        null';
-                } else if (cmd === 'store') {
-                    output.textContent += `
-  ┌───────────────────────────────┐                          ┌───────────────────────────────┐                          ┌───────────────────────────────┐  
-  │                               │                          │                               │                          │                               │ 
-  │                               │                          │                               │                          │                               │
-  │                               │                          │                               │                          │                               │ 
-  │                               │                          │                               │                          │                               │
-  │                               │                          │                               │                          │                               │
-  │                               │                          │                               │                          │                               │
-  │                               │──────────────────────────│                               │──────────────────────────│                               │
-  │                               │                          │                               │                          │                               │
-  │                               │                          │                               │                          │                               │
-  │                               │                          │                               │                          │                               │
-  │                               │                          │                               │                          │                               │
-  │                               │                          │                               │                          │                               │
-  │                               │                          │                               │                          │                               │                          
-  └───────────────────────────────┘                          └───────────────────────────────┘                          └───────────────────────────────┘               
-              ?error                                                      ?error                                                      ?error
-        
-  `;                        
-                } else if (cmd === 'contact') {
-                    output.textContent += '\nX:vriannn \nPhone: 657-273-1134';
-                } else if (cmd === 'date') {
-                        const currentDate = new Date();
-                        output.textContent += `\nLocal Date and Time: ${currentDate.toLocaleString()}`;
-                } else if (cmd === 'location') {
-                    let locations = ['Supercharged', 'Tacos and Tequilla', 'Philadelphia', 'Around'];
-                    let date = new Date();
-                    let currentHour = date.getHours();
-
-                    if (currentHour >= 7 && currentHour < 15) {
-                    // if the current time is between 7AM and 3PM
-                    output.textContent += '\nbrian is at work';
-                    } else {
-                        
-                    // if the current time is outside of 7AM to 3PM (thank god)
-                    let randomIndex = Math.floor(Math.random() * locations.length);
-                    let selectedLocation = locations[randomIndex];
-                    output.textContent += '\nLocation: ' + selectedLocation;
-                    }
-                } else {
-                    output.textContent += '\nUnknown command: ' + cmd;
-                }
-                
-            }
-        });
-                // Start typing the intro text when the page loads
-        typeIntroText();
+    typeIntroText();
