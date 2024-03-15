@@ -22,20 +22,16 @@ body {
     width: 100%;
     font-family: 'Courier New', monospace;
 }
-@media only screen and (max-width: 390px) {
-    body {
-        padding: 10px;
-        font-size: 14px;
-    }
+@media only screen and (max-width: 900px) {
     #output {
-        font-family: 'Courier New', Courier, monospace; /* monospace font */
-        white-space: pre; /* preserves spaces and line breaks */
-        word-wrap: break-word; /* allows long lines to break and go to the next line */
-    }
+    font-family: 'Courier New', Courier, monospace; /* monospace font */
+    white-space: pre; /* preserves spaces and line breaks */
+    word-wrap: break-word; /* allows long lines to break and go to the next line */
+    font-size: 1.2em; /* responsive font size */
+}
     #prompt {
-        margin-right: 2px;
-    }
-    #input {
-        width: 90%;
+        margin-right: 1.2em;
+        font-size: 1.2em;
+    
     }
 }
