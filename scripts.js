@@ -1,3 +1,27 @@
+let gameActive = false;
+let randomNumber;
+let attempts;
+
+function gameListener(cmd) {
+    const guess = Number(cmd);
+    if (isNaN(guess)) {
+        output.textContent += `\nInvalid input. Please enter a number.
+        `;
+    } else {
+        attempts++;
+        if (guess === randomNumber) {
+            output.textContent += `\nCongratulations! You found the number in ${attempts} attempts.
+            `;
+            gameActive = false;
+        } else if (guess < randomNumber) {
+            output.textContent += `\n${guess} is too low. Try again.
+            `;
+        } else if (guess > randomNumber) {
+            output.textContent += `\n${guess} is too high. Try again.
+            `;
+        }
+    }
+}
 document.addEventListener("DOMContentLoaded", function () {
     const output = document.getElementById('output');
     const input = document.getElementById('input');
@@ -21,8 +45,10 @@ document.addEventListener("DOMContentLoaded", function () {
                        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣿⡿⠛⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢻⡇⠀⠀⢀⣼⠗⠀⠀
                        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠃⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠁⠀⠀⠀
                        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠒⠀⠀⠀⠀⠀⠀⠀⠀
-Type 'help' to list all available commands.`;
-    let charIndex = 0;
+Type 'help' to list all available commands.
+`;
+    
+let charIndex = 0;
 
     function typeIntroText() {
         if (charIndex < introText.length) {
@@ -33,32 +59,55 @@ Type 'help' to list all available commands.`;
     }
         window.addEventListener('click', function() {
         document.getElementById('input').focus();
+    });
     
-    input.addEventListener('keydown', function(event) {
+    document.getElementById('input').addEventListener('keydown', function(event) {
         if (event.key === 'Enter') {
             event.preventDefault();
-            const cmd = input.value.trim();
-            input.value = '';
+            const cmd = this.value.trim();
+            this.value = '';
             output.textContent += '\n' + prompt.textContent + cmd;
+            if (gameActive) {
+                if (cmd.toLowerCase() === 'exit') {
+                    gameActive = false;
+                    output.textContent += `\nExited the game.`;
+                } else {
+                    gameListener(cmd);
+                }
+                return;
+            }
             switch (cmd.toLowerCase()) {
                 case 'help':
-                    output.textContent += `\nDATE         Displays time and date\nCONTACT      Displays contact information\nLOCATION     Displays brians current location\nSTORE        null\nMUSIC        Displays a random song from brians playlist\nPLAYLIST     Opens brians playlist`;
+                    output.textContent += `\nFor more information on a specific command, type HELP \nDATE         Displays time and date\nCONTACT      Displays contact information\nLOCATION     Displays brian's current location\nSTORE        null\nMUSIC        Displays a random song from brian's music\nPLAYLIST     Opens brian's playlist\nGAME         Guess a Number 1-100 for a prize\nSOCIAL       Displays brian's social media
+                    `;
                     break;
                 case 'date':
                     const currentDate = new Date();
-                    output.textContent += `\nLocal Date and Time: ${currentDate.toLocaleString()}`;
+                    output.textContent += `\nLocal Date and Time: ${currentDate.toLocaleString()}
+                    `;
                     break;
+                case 'social':
+                    output.textContent += `\nX:vriannn \nIG:myhandsareclammy \nDiscord: vrian
+                    `;
+                        break;
                 case 'contact':
-                    output.textContent += `\nX:vriannn \nPhone: 657-273-1134`;
+                    output.textContent += `\nEmail: brianrodriguez368@gmail.com \nPhone: 657-273-1134
+                    `;
+                        break;
+                        case 'playlist':
+                            const url = 'https://music.apple.com/us/playlist/playlist-for-my-funeral/pl.u-vxy6kjMCPW56lK'; // playlist
+                            window.open(url, '_blank');
                         break;
                 case 'location':
-                    const locations = ['supercharged', 'tacos and Tequila', 'philadelphia', ];
+                    const locations = ['at supercharged', 'getting tacos and tequila', 'in Philadelphia', ];
                     const currentHour = new Date().getHours();
                     if (currentHour >= 7 && currentHour < 15) {
-                        output.textContent += '\nbrian is at work';
+                        output.textContent += `\nbrian is at work
+                        `;
                     } else {
                         const selectedLocation = locations[Math.floor(Math.random() * locations.length)];
-                        output.textContent += `\nbrian is at ${selectedLocation}`;
+                        output.textContent += `\nbrian is ${selectedLocation}
+                        `;
                     }
                     break;
                     case 'store':
@@ -89,7 +138,7 @@ Type 'help' to list all available commands.`;
                             'A$AP Rocky - A$AP Forever',
                             'Travis Scott - ASTROTHUNDER',
                             'BROCKHAMPTON - BANK',
-                            'Jaden - Better Things',
+                            'Jaden Smith - Better Things',
                             'Quavo - BIGGEST ALLEY OOP',
                             'Kendrick Lamar - Bitch, Dont Kill My Vibe',
                             'Kanye West - Bound 2',
@@ -137,19 +186,25 @@ Type 'help' to list all available commands.`;
                             'Wu-Tang Clan - Protect Ya Neck'
                         ];
                         const selectedSong = songs[Math.floor(Math.random() * songs.length)];
-                        output.textContent += `\nyou should listen to ${selectedSong}`;
+                        output.textContent += `\nyou should listen to ${selectedSong}
+                        `;
                         break;
-                    case 'playlist':
-                        const url = 'https://music.apple.com/us/playlist/playlist-for-my-funeral/pl.u-vxy6kjMCPW56lK'; // playlist
-                        window.open(url, '_blank');
-                    break;
+                        case 'game':
+                            gameActive = true;
+                            attempts = 0;
+                            randomNumber = Math.floor(Math.random() * 100) + 1;
+                            output.textContent += `\nGuess a number between 1 and 100; Type exit to quit game
+                            `;
+                            break;
+
                     default:
-                        output.textContent += `\n'${cmd}' is not recognized as an internal or external command,\noperable program or batch file.`;
+                        output.textContent += `\n'${cmd}' is not recognized as an internal or external command,\noperable program or batch file.
+                        `;
+                        
             break;
             
                 }
             }
-        });
         });
     typeIntroText();
 });
