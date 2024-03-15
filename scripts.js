@@ -40,7 +40,7 @@ Type 'help' to list all available commands.`;
             output.textContent += '\n' + prompt.textContent + cmd;
             switch (cmd.toLowerCase()) {
                 case 'help':
-                    output.textContent += '\nDATE         Displays time and date\nCONTACT      Displays contact information\nLOCATION     Displays brians current location\nSTORE        null\nMUSIC        Displays a random song from brians playlist';
+                    output.textContent += `\nDATE         Displays time and date\nCONTACT      Displays contact information\nLOCATION     Displays brians current location\nSTORE        null\nMUSIC        Displays a random song from brians playlist\nPLAYLIST     Opens brians playlist`;
                     break;
                 case 'date':
                     const currentDate = new Date();
@@ -58,30 +58,30 @@ Type 'help' to list all available commands.`;
                     break;
                     case 'store':
                         output.textContent +=`
-                        ┌───────────────────────────────┐                          ┌───────────────────────────────┐                          ┌───────────────────────────────┐  
-                        │                               │                          │                               │                          │                               │ 
-                        │                               │                          │                               │                          │                               │
-                        │                               │                          │                               │                          │                               │ 
-                        │                               │                          │                               │                          │                               │
-                        │                               │                          │                               │                          │                               │
-                        │                               │                          │                               │                          │                               │
-                        │                               │──────────────────────────│                               │──────────────────────────│                               │
-                        │                               │                          │                               │                          │                               │
-                        │                               │                          │                               │                          │                               │
-                        │                               │                          │                               │                          │                               │
-                        │                               │                          │                               │                          │                               │
-                        │                               │                          │                               │                          │                               │
-                        │                               │                          │                               │                          │                               │                          
-                        └───────────────────────────────┘                          └───────────────────────────────┘                          └───────────────────────────────┘               
-                                    ?error                                                      ?error                                                      ?error
-                                    `;
+┌───────────────────────────────┐          ┌───────────────────────────────┐          ┌───────────────────────────────┐  
+│                               │          │                               │          │                               │ 
+│                               │          │                               │          │                               │
+│                               │          │                               │          │                               │ 
+│                               │          │                               │          │                               │
+│                               │          │                               │          │                               │
+│                               │          │                               │          │                               │
+│                               │──────────│                               │──────────│                               │
+│                               │          │                               │          │                               │
+│                               │          │                               │          │                               │
+│                               │          │                               │          │                               │
+│                               │          │                               │          │                               │
+│                               │          │                               │          │                               │
+│                               │          │                               │          │                               │                          
+└───────────────────────────────┘          └───────────────────────────────┘          └───────────────────────────────┘               
+            ?error                                      ?error                                      ?error
+            `;
                         break;
                     case 'music':
                         const songs = [
                             'Drake - Too Much', 
                             'Action Bronson - Actin Crazy', 
                             'Kendrick Lamar - Alright',
-                            'A$AP Rocky - A$AP Forever (REMIX) [feat. Moby, T.I. & Kid Cudi]',
+                            'A$AP Rocky - A$AP Forever',
                             'Travis Scott - ASTROTHUNDER',
                             'BROCKHAMPTON - BANK',
                             'Jaden - Better Things',
@@ -90,33 +90,33 @@ Type 'help' to list all available commands.`;
                             'Kanye West - Bound 2',
                             'Steve Lacy - C U Girl',
                             'Travis Scott - BUTTERFLY EFFECT',
-                            'A$AP Rocky - CALLDROPS (feat. Kodak Black)',
-                            'Wu-Tang Clan - C.R.E.A.M. (Cash Rules Everything Around Me) [feat. Method Man, Raekwon, Inspectah Deck & Buddha Monk]',
-                            'Travis Scott - CAN\'T SAY',
-                            'Drake - Can\'t Have Everything',
-                            'Kanye West - Can\'t Tell Me Nothing',
+                            'A$AP Rocky - CALLDROPS',
+                            'Wu-Tang Clan - C.R.E.A.M.',
+                            'Travis Scott - CANT SAY',
+                            'Drake - Cant Have Everything',
+                            'Kanye West - Cant Tell Me Nothing',
                             'XXXTENTACION - Carry On',
                             'Logic - City of Stars',
                             'Nirvana - Come As You Are',
-                            'Mac Miller - Congratulations (feat. Bilal)',
+                            'Mac Miller - Congratulations',
                             'Lil Yachty - COUNT ME IN',
                             'Kid Cudi - Day n Nite',
                             'Drake - Do Not Disturb',
-                            'Metro Boomin - Dont Come Out the House (feat. 21 Savage)',
+                            'Metro Boomin - Dont Come Out the House',
                             'Nirvana - Dumb',
                             'Kendrick Lamar - DUCKWORTH.',
                             'Action Bronson - Easy Rider',
                             'Rex Orange County - Edition',
                             'Travis Scott - the ends',
-                            'Kid Cudi & Kanye West - Erase Me (feat. Kanye West)',
+                            'Kid Cudi & Kanye West - Erase Me',
                             'Playboi Carti - FlatBed Freestyle',
                             'Kanye West - Flashing Lights',
                             'BROCKHAMPTON - FIGHT',
                             'Phora - Feel',
                             'Kanye West - Father Stretch My Hands, Pt. 1',
-                            'Quavo - FLIP THE SWITCH (feat. Drake)',
-                            'Tyler, The Creator - F*****G YOUNG / PERFECT (feat. Charlie Wilson, Chaz Bundick, Syd Bennett, and Kali Uchis)',
-                            'Kanye West & Chris Martin - Homecoming (feat. Chris Martin)',
+                            'Quavo - FLIP THE SWITCH',
+                            'Tyler, The Creator - F*****G YOUNG / PERFECT',
+                            'Kanye West & Chris Martin - Homecoming',
                             'Mac Miller - Hurt Feelings',
                             'Tay-K - I <3 My Choppa',
                             'Kanye West - Jesus Walks',
@@ -126,16 +126,21 @@ Type 'help' to list all available commands.`;
                             'Jaden - Lost Boy',
                             'HUNCHO JACK, Travis Scott & Quavo - Motorcycle Patches',
                             'Drake - Passionfruit',
-                            'Earl Sweatshirt - Playing Possum (feat. Cheryl Harris & Keorapetse Kgositsile)',
+                            'Earl Sweatshirt - Playing Possum',
                             'Tyler, The Creator & A$AP Rocky - Potato Salad',
-                            'A$AP Rocky - Praise The Lord (Da Shine) [feat. Skepta]',
-                            'Wu-Tang Clan - Protect Ya Neck (feat. RZA, Method Man, Inspectah Deck, Raekwon, U-God, Ol Dirty Bastard, Ghostface Killah & GZA)'
+                            'A$AP Rocky - Praise The Lord',
+                            'Wu-Tang Clan - Protect Ya Neck'
                         ];
                         const selectedSong = songs[Math.floor(Math.random() * songs.length)];
                         output.textContent += `\nyou should listen to ${selectedSong}`;
                         break;
+                    case 'playlist':
+                        const url = 'https://music.apple.com/us/playlist/playlist-for-my-funeral/pl.u-vxy6kjMCPW56lK'; // playlist
+                        window.open(url, '_blank');
+                    break;
                     default:
-                        output.textContent += '\nUnknown command.';
+                        output.textContent += `\n'${cmd}' is not recognized as an internal or external command,\noperable program or batch file.`;
+            break;
                 }
             }
         });
