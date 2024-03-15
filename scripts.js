@@ -31,7 +31,9 @@ Type 'help' to list all available commands.`;
             setTimeout(typeIntroText, 0.3); // Adjust the typing speed (0.3 ms per character for visibility)
         }
     }
-
+        window.addEventListener('click', function() {
+        document.getElementById('input').focus();
+    
     input.addEventListener('keydown', function(event) {
         if (event.key === 'Enter') {
             event.preventDefault();
@@ -141,8 +143,10 @@ Type 'help' to list all available commands.`;
                     default:
                         output.textContent += `\n'${cmd}' is not recognized as an internal or external command,\noperable program or batch file.`;
             break;
+            
                 }
             }
+        });
         });
     typeIntroText();
 });
