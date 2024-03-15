@@ -48,6 +48,9 @@ Type 'help' to list all available commands.`;
                     const currentDate = new Date();
                     output.textContent += `\nLocal Date and Time: ${currentDate.toLocaleString()}`;
                     break;
+                case 'contact':
+                    output.textContent += `\nX:vriannn \nPhone: 657-273-1134`;
+                        break;
                 case 'location':
                     const locations = ['supercharged', 'tacos and Tequila', 'philadelphia', ];
                     const currentHour = new Date().getHours();
