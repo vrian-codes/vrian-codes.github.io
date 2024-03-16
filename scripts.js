@@ -78,7 +78,7 @@ let charIndex = 0;
             }
             switch (cmd.toLowerCase()) {
                 case 'help':
-                    output.textContent += `\nFor more information on a specific command, type HELP \nDATE         Displays time and date\nCONTACT      Displays contact information\nLOCATION     Displays brian's current location\nSTORE        null\nMUSIC        Displays a random song from brian's music\nPLAYLIST     Opens brian's playlist\nGAME         Guess a Number 1-100 for a prize\nSOCIAL       Displays brian's social media
+                    output.textContent += `\nFor more information on a specific command, type HELP \nDATE         Displays time and date\nCONTACT      Displays contact information\nLOCATION     Displays brian's current location\nSTORE        null\nMUSIC        Displays a random song from brian's music\nPLAYLIST     Opens brian's playlist\nGAME         Guess a Number 1-100 for a prize\nTWITTER       Opens brian's twitter\nINSTAGRAM       Opens brian's instagram
                     `;
                     break;
                 case 'date':
@@ -86,18 +86,23 @@ let charIndex = 0;
                     output.textContent += `\nLocal Date and Time: ${currentDate.toLocaleString()}
                     `;
                     break;
-                case 'social':
-                    output.textContent += `\nX:vriannn \nIG:myhandsareclammy \nDiscord: vrian
-                    `;
+                case 'instagram':
+                    const url3 = 'https://www.instagram.com/myhandsareclammy/'; // twitter
+                    window.open(url3, '_blank');
+                    break;
                         break;
                 case 'contact':
                     output.textContent += `\nEmail: brianrodriguez368@gmail.com \nPhone: 657-273-1134
                     `;
                         break;
-                        case 'playlist':
-                            const url = 'https://music.apple.com/us/playlist/playlist-for-my-funeral/pl.u-vxy6kjMCPW56lK'; // playlist
-                            window.open(url, '_blank');
+                case 'playlist':
+                    const url = 'https://music.apple.com/us/playlist/playlist-for-my-funeral/pl.u-vxy6kjMCPW56lK'; // playlist
+                    window.open(url, '_blank');
                         break;
+                case 'twitter':
+                    const url2 = 'https://twitter.com/vriannn'; // twitter
+                    window.open(url2, '_blank');
+                    break;
                 case 'location':
                     const locations = ['at supercharged', 'getting tacos and tequila', 'in Philadelphia', ];
                     const currentHour = new Date().getHours();
