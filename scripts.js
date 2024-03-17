@@ -54,7 +54,7 @@ let charIndex = 0;
         if (charIndex < introText.length) {
             output.textContent += introText.charAt(charIndex);
             charIndex++;
-            setTimeout(typeIntroText, 0.3); // Adjust the typing speed (0.3 ms per character for visibility)
+            setTimeout(typeIntroText, 0.2); // Adjust the typing speed (0.2 ms per character for visibility)
         }
     }
         window.addEventListener('click', function() {
@@ -70,7 +70,7 @@ let charIndex = 0;
             if (gameActive) {
                 if (cmd.toLowerCase() === 'exit') {
                     gameActive = false;
-                    output.textContent += `\nExited the game.`;
+                    output.textContent += `\nGame over.`;
                 } else {
                     gameListener(cmd);
                 }
@@ -78,7 +78,7 @@ let charIndex = 0;
             }
             switch (cmd.toLowerCase()) {
                 case 'help':
-                    output.textContent += `\nFor more information on a specific command, type HELP \nDATE         Displays time and date\nCONTACT      Displays contact information\nLOCATION     Displays brian's current location\nSTORE        null\nMUSIC        Displays a random song from brian's music\nPLAYLIST     Opens brian's playlist\nGAME         Guess a Number 1-100 for a prize\nTWITTER       Opens brian's twitter\nINSTAGRAM       Opens brian's instagram
+                    output.textContent += `\nFor more information on a specific command, type HELP \nDATE         Displays time and date\nCONTACT      Displays contact information\nLOCATION     Displays brian's current location\nSTORE        null\nMUSIC        Displays a random song from brian's music\nPLAYLIST     Opens brian's playlist\nGAME         Guess a Number 1-100 for a prize\nTWITTER      Opens brian's twitter\nINSTAGRAM    Opens brian's instagram
                     `;
                     break;
                 case 'date':
@@ -205,7 +205,6 @@ let charIndex = 0;
                     default:
                         output.textContent += `\n'${cmd}' is not recognized as an internal or external command,\noperable program or batch file.
                         `;
-                        
             break;
             
                 }
