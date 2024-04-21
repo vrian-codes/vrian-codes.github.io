@@ -30,8 +30,11 @@ body {
     font-size: 0.7em; /* responsive font size */
 }
     #prompt {
-        margin-right: 0.7em;
-        font-size: 0.7em;
+        margin-right: 1.0em;
+        font-size: 1.0em;
     
+    }
+    #input {
+        font-size: 0.9em; /* Adjust input font size */
     }
 }
