@@ -18,7 +18,7 @@ function gameListener(cmd) {
             `;
         } else if (guess > randomNumber) {
             output.textContent += `\n${guess} is too high. Try again.
-            `;
+            `; // code for useless game
         }
     }
 }
@@ -54,7 +54,7 @@ let charIndex = 0;
         if (charIndex < introText.length) {
             output.textContent += introText.charAt(charIndex);
             charIndex++;
-            setTimeout(typeIntroText, 0.2); // Adjust the typing speed (0.2 ms per character for visibility)
+            setTimeout(typeIntroText, 0.02); // typing speed (0.2 ms per character)
         }
     }
         window.addEventListener('click', function() {
@@ -74,39 +74,51 @@ let charIndex = 0;
                 } else {
                     gameListener(cmd);
                 }
-                return;
+                return; // even more code for useless game
             }
             switch (cmd.toLowerCase()) {
                 case 'help':
-                    output.textContent += `\nFor more information on a specific command, type HELP \nDATE         Displays time and date\nCONTACT      Displays contact information\nLOCATION     Displays brian's current location\nSTORE        null\nMUSIC        Displays a random song from brian's music\nPLAYLIST     Opens brian's playlist\nGAME         Guess a Number 1-100 for a prize\nTWITTER      Opens brian's twitter\nINSTAGRAM    Opens brian's instagram
-                    `;
+                    output.textContent += `\nFor more information on a specific command, type HELP \nTWITTER      Opens brian's twitter\nDATE         Displays time and date\nPLAYLIST     Opens brian's playlist\nINSTAGRAM    Opens brian's instagram\nCONTACT      Displays contact information\nGAME         Guess a Number 1-100 for a prize\nLOCATION     Displays brian's current location\nMUSIC        Displays a random song from brian's music
+                    `; // help commands 
                     break;
                 case 'date':
                     const currentDate = new Date();
                     output.textContent += `\nLocal Date and Time: ${currentDate.toLocaleString()}
-                    `;
+                    `; // users current timezone
                     break;
                 case 'instagram':
-                    const url3 = 'https://www.instagram.com/myhandsareclammy/'; // twitter
+                    const url3 = 'https://www.instagram.com/myhandsareclammy/'; // instagram
                     window.open(url3, '_blank');
                     break;
-                        break;
+                case 'login':
+                    output.textContent += `rats.. we ran into an error`
+                    break;
                 case 'contact':
-                    output.textContent += `\nEmail: brianrodriguez368@gmail.com \nPhone: 657-273-1134
-                    `;
+                    output.textContent += `\nEmail: bender.work@gmx.com \nPhone: 657-273-1134
+                    `; // contact
                         break;
                 case 'playlist':
                     const url = 'https://music.apple.com/us/playlist/playlist-for-my-funeral/pl.u-vxy6kjMCPW56lK'; // playlist
                     window.open(url, '_blank');
+                        break;
+                case 'net user':
+                    output.textContent += `
+                    \nUser accounts for \\VRIAN
+                    
+-------------------------------------------------------------------------------------------------
+Administrator                   Vrian                           DefaultAccount 
+Guest                           blabbla                         you :]
+The Command completed successfully.
+                    `;
                         break;
                 case 'twitter':
                     const url2 = 'https://twitter.com/vriannn'; // twitter
                     window.open(url2, '_blank');
                     break;
                 case 'location':
-                    const locations = ['at supercharged', 'getting tacos and tequila', 'in Philadelphia', ];
+                    const locations = ['at HOME', ]; // location status
                     const currentHour = new Date().getHours();
-                    if (currentHour >= 7 && currentHour < 15) {
+                    if (currentHour >= 7 && currentHour < 15) { // 7 AM to 3 PM
                         output.textContent += `\nbrian is at work
                         `;
                     } else {
@@ -115,7 +127,7 @@ let charIndex = 0;
                         `;
                     }
                     break;
-                    case 'store':
+                    case 'store': // hey you aren't suppose to see this
                         output.textContent +=`
 ┌───────────────────────────────┐          ┌───────────────────────────────┐          ┌───────────────────────────────┐  
 │                               │          │                               │          │                               │ 
@@ -132,7 +144,7 @@ let charIndex = 0;
 │                               │          │                               │          │                               │
 │                               │          │                               │          │                               │                          
 └───────────────────────────────┘          └───────────────────────────────┘          └───────────────────────────────┘               
-            ?error                                      ?error                                      ?error
+             error                                       error                                      error
             `;
                         break;
                     case 'music':
@@ -192,19 +204,19 @@ let charIndex = 0;
                         ];
                         const selectedSong = songs[Math.floor(Math.random() * songs.length)];
                         output.textContent += `\nyou should listen to ${selectedSong}
-                        `;
+                        `; // picking a random song
                         break;
                         case 'game':
                             gameActive = true;
                             attempts = 0;
                             randomNumber = Math.floor(Math.random() * 100) + 1;
                             output.textContent += `\nGuess a number between 1 and 100; Type exit to quit game
-                            `;
+                            `; // useless game command
                             break;
 
                     default:
                         output.textContent += `\n'${cmd}' is not recognized as an internal or external command,\noperable program or batch file.
-                        `;
+                        `; // error for wrong command
             break;
             
                 }
