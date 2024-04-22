@@ -2,6 +2,16 @@ let gameActive = false;
 let randomNumber;
 let attempts;
 
+var password = prompt("Please enter the password:");
+
+if (password != null && password === "password") {
+    // If password is correct, display the content
+    document.getElementById("content").style.display = "block";
+} else {
+    // If password is incorrect, hide the content
+    document.getElementById("content").style.display = "none";
+    alert("Incorrect password. Access denied.");
+}
 function gameListener(cmd) {
     const guess = Number(cmd);
     if (isNaN(guess)) {
