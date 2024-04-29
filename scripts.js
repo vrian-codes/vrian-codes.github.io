@@ -12,7 +12,7 @@ if (password === "password") {
     document.getElementById("content").style.display = "none";
     alert("Incorrect password or access canceled. Access denied.");
     // Redirect to another page
-    window.location.href = "accessdenied.html"; // Replace this URL with the one you want to redirect to
+    window.location.href = "https://vrians.world/accessdenied"; // Replace this URL with the one you want to redirect to
 }
 
 function gameListener(cmd) {
