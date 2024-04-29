@@ -4,14 +4,17 @@ let attempts;
 
 var password = prompt("Please enter the password:");
 
-if (password != null && password === "password") {
+if (password === "password") {
     // If password is correct, display the content
     document.getElementById("content").style.display = "block";
 } else {
-    // If password is incorrect, hide the content
+    // If password is incorrect, or cancel is clicked (password is null), hide the content
     document.getElementById("content").style.display = "none";
-    alert("Incorrect password. Access denied.");
+    alert("Incorrect password or access canceled. Access denied.");
+    // Redirect to another page
+    window.location.href = "accessdenied.html"; // Replace this URL with the one you want to redirect to
 }
+
 function gameListener(cmd) {
     const guess = Number(cmd);
     if (isNaN(guess)) {
