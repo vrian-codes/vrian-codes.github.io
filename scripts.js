@@ -73,10 +73,13 @@ function typeIntroText() {
                        }
                        typeIntroText();
     
-        window.addEventListener('click', function() {
-        document.getElementById('input').focus();
+     document.body.addEventListener('click', function(event) {
+    // Prevent focusing the input field if the click was on an input, button, or link
+        if (!['INPUT', 'BUTTON', 'A'].includes(event.target.tagName)) {
+            input.focus();
+        }
     });
-    document.getElementById('input').addEventListener('keydown', function(event) {
+    input.addEventListener('keydown', function(event) {
         if (event.key === 'Enter') {
             event.preventDefault();
             const cmd = this.value.trim();
