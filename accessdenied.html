@@ -3,13 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="wrld2.png" type="image/x-icon">
     <title>Access Denied</title>
+    <link rel="icon" href="wrld2.png" type="image/x-icon">
     <link rel="stylesheet" href="accessdenied.css">
 </head>
 <body>
-    <div class="container">
-        <img src="img_59e6d500051c8.png" alt="Access Denied Image">
+<div id="myModal" class="modal-background">
+    <!-- Modal content -->
+    <div class="modal-content">
+      <p>Access is denied</p>
+      <!-- When this button is clicked, the redirection function will be called -->
+      <button class="ok-button" onclick="redirect()">OK</button>
+      <script src="accessdenied.js" defer></script>
     </div>
+  </div>
 </body>
 </html>
