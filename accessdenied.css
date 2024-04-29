@@ -1,0 +1,22 @@
+body, html {
+    height: 100%; /* Ensure the full height of the page is used */
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f8f8f8;
+    color: #333;
+    display: flex;
+    align-items: center; /* Center content vertically */
+    justify-content: center; /* Center content horizontally */
+}
+img {
+    max-width: 100%; /* Responsive width */
+    height: auto; /* Maintain aspect ratio */
+    margin-top: 10px; /* Space above the image */
+}
+h1 {
+    color: #d9534f;
+}
+p {
+    font-size: 16px;
+}
