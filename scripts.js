@@ -73,18 +73,30 @@ function typeIntroText() {
                        }
                        typeIntroText();
     
-     document.body.addEventListener('click', function(event) {
-    // Prevent focusing the input field if the click was on an input, button, or link
+     document.addEventListener("DOMContentLoaded", function () {
+    const input = document.getElementById('input');
+
+    // Function to handle focusing the input
+    function focusInput(event) {
         if (!['INPUT', 'BUTTON', 'A'].includes(event.target.tagName)) {
             input.focus();
         }
-    });
+    }
+
+    // Listen for both click and touchend events
+    document.body.addEventListener('click', focusInput);
+    document.body.addEventListener('touchend', focusInput); // Added for better mobile support
+
     input.addEventListener('keydown', function(event) {
         if (event.key === 'Enter') {
             event.preventDefault();
+            // handle command processing here
             const cmd = this.value.trim();
             this.value = '';
             output.textContent += '\n' + prompt.textContent + cmd;
+                    }
+    });
+});
             if (gameActive) {
                 if (cmd.toLowerCase() === 'exit') {
                     gameActive = false;
