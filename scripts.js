@@ -57,23 +57,25 @@ document.addEventListener("DOMContentLoaded", function () {
                        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⡿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣿⡿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣿⠿⠿⣿⣿⣿⠇⠀⠀⢀⠀⠀⠀
                        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣿⡿⠛⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢻⡇⠀⠀⢀⣼⠗⠀⠀
                        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠃⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠁⠀⠀⠀
-                       ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠒⠀⠀⠀⠀⠀⠀⠀⠀
-Type 'help' to list all available commands.
-`;
-    
-let charIndex = 0;
+                       ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠒`;
 
-    function typeIntroText() {
-        if (charIndex < introText.length) {
-            output.textContent += introText.charAt(charIndex);
-            charIndex++;
-            setTimeout(typeIntroText, 0.02); // typing speed (0.2 ms per character)
-        }
-    }
+const helpText = "\nType 'help' to list all available commands."; // Ensure to start with a newline if needed
+
+let charIndex = 0;
+let totalText = introText + helpText; // Concatenate intro and help text
+                   
+function typeIntroText() {
+    if (charIndex < totalText.length) {
+            output.textContent += totalText.charAt(charIndex);
+                charIndex++;
+            setTimeout(typeIntroText, 1.0); // Maintain the same typing speed throughout
+                           }
+                       }
+                       typeIntroText();
+    
         window.addEventListener('click', function() {
         document.getElementById('input').focus();
     });
-    
     document.getElementById('input').addEventListener('keydown', function(event) {
         if (event.key === 'Enter') {
             event.preventDefault();
