@@ -48,10 +48,10 @@ html, body {
     font-size: 0.7em; /* responsive font size */
 }
     #prompt {
-        margin-right: 1.0em;
-        font-size: 1.0em;
+        margin-right: 0.7em;
+        font-size: 0.7em;
     }
     #input {
-        font-size: 0.9em; /* Adjust input font size */
+        font-size: 0.7em; /* Adjust input font size */
     }
 }
