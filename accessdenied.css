@@ -8,16 +8,6 @@ html, body {
     background-color: #f8f8f8;
     font-family: Arial, sans-serif;
 }
-.container {
-    width: 100%; /* Use max-width if you want to limit container width */
-    max-width: 600px; /* Adjust max-width as needed */
-    text-align: center;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background: #fff;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
 img {
     max-width: 100%;
     height: auto;
