@@ -22,6 +22,20 @@ body {
     width: 100%;
     font-family: 'Courier New', monospace;
 }
+#small-font {
+    font-size: 8px; /* Adjust the font size as needed */
+  }
+  
+  #help-text {
+    font-size: 3.0em;
+}
+
+/* Responsive font size for smaller screens */
+@media only screen and (max-width: 900px) {
+    #help-text {
+        font-size: 3.0em; /* Adjust the size as necessary */
+    }
+}
 @media only screen and (max-width: 900px) {
     #output {
     font-family: 'Courier New', Courier, monospace; /* monospace font */
@@ -32,7 +46,6 @@ body {
     #prompt {
         margin-right: 1.0em;
         font-size: 1.0em;
-    
     }
     #input {
         font-size: 0.9em; /* Adjust input font size */
