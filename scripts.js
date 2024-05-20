@@ -23,8 +23,13 @@ function gameListener(cmd) {
     } else {
         attempts++;
         if (guess === randomNumber) {
-            output.textContent += `\nCongratulations! You found the number in ${attempts} attempts.
+            if (attempts === 1) {
+            output.textContent += `\nCongratulations! You found the number on the first attempt. Your code is: 877219
             `;
+            } else {
+                output.textContent += `\nCongratulations! You found the number in ${attempts} attempts.\n
+                `;
+            }
             gameActive = false;
         } else if (guess < randomNumber) {
             output.textContent += `\n${guess} is too low. Try again.
@@ -39,6 +44,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const output = document.getElementById('output');
     const input = document.getElementById('input');
     const prompt = document.getElementById('prompt');
+
     const introText = `
                     ⠀⠀⠀⠀⠀⠀   ⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣄⣠⣀⡀⣀⣠⣤⣤⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
                     ⠀⠀⠀⠀   ⠀⠀⠀⠀⠀⠀⣄⢠⣠⣼⣿⣿⣿⣟⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠀⠀⠀⢠⣤⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠰⢦⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -69,10 +75,14 @@ function typeIntroText() {
             output.textContent += totalText.charAt(charIndex);
                 charIndex++;
             setTimeout(typeIntroText, 1.0); // Maintain the same typing speed throughout
-                           }
-                       }
-                       typeIntroText();
-    
+                } else {
+            input.disabled = false; // Enable input after typing is complete
+            input.focus();
+                }
+             }
+            input.disabled = true; // Disable input initially
+                typeIntroText();
+
     document.body.addEventListener('click', function(event) {
     // Prevent focusing the input field if the click was on an input, button, or link
         if (!['INPUT', 'BUTTON', 'A'].includes(event.target.tagName)) {
@@ -86,31 +96,74 @@ function typeIntroText() {
             const cmd = this.value.trim();
             this.value = '';
             output.textContent += '\n' + prompt.textContent + cmd;
+
             if (gameActive) {
-                if (cmd.toLowerCase() === 'exit') {
+                if (cmd.toLowerCase() === 'exit') { // exits game and returns to prompt
                     gameActive = false;
                     output.textContent += `\nGame over.`;
                 } else {
                     gameListener(cmd);
                 }
-                return; // even more code for useless game
+                return;
             }
             switch (cmd.toLowerCase()) {
                 case 'help':
-                    output.textContent += `\nFor more information on a specific command, type HELP \nTWITTER      Opens brian's twitter\nDATE         Displays time and date\nPLAYLIST     Opens brian's playlist\nINSTAGRAM    Opens brian's instagram\nCONTACT      Displays contact information\nGAME         Guess a Number 1-100 for a prize\nLOCATION     Displays brian's current location\nMUSIC        Displays a random song from brian's music
-                    `; // help commands 
+                    output.textContent += `
+                    
+[+] Core Commands:
+
+Twitter             Opens brian's twitter
+Playlist            Opens brian's playlist
+Instagram           Opens brian's instagram
+Store               ?
+                    
+[+] System Commands:
+                                   
+Contact             Displays contact information
+Game                Guess a Number 1-100 for a prize
+Location            Displays brian's current location
+Music               Displays a random song from brian's music
+                    
+[+] User Activity:
+                 
+Whoami              Displays information about your device
+Clear               Clear entries              
+
+`; // help commands 
                     break;
                 case 'date':
-                    const currentDate = new Date();
-                    output.textContent += `\nLocal Date and Time: ${currentDate.toLocaleString()}
-                    `; // users current timezone
+                            ; // users current timezone
                     break;
                 case 'instagram':
                     const url3 = 'https://www.instagram.com/myhandsareclammy/'; // instagram
                     window.open(url3, '_blank');
                     break;
+                    case 'whoami':
+                        // Fetch the IP address from ipify
+                        fetch('https://api.ipify.org?format=json')
+                            .then(response => response.json())
+                            .then(data => {
+                                const ipInfo = `\nIP Address: ${data.ip}`;
+                                // Fetch browser information
+                                const browserInfo = `Browser: ${navigator.appName}, \nVersion: ${navigator.appVersion}, \nPlatform: ${navigator.platform}`;
+                                // Fetch screen resolution
+                                const screenSize = `Screen Resolution: ${window.screen.width} x ${window.screen.height}`;
+                                // Fetch local time and timezone
+                                const timezone = `Local Time: ${new Date().toLocaleTimeString()}, Time Zone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`;
+        
+                                output.textContent += `\n${ipInfo}\n${browserInfo}\n${screenSize}\n${timezone}`;
+                            })
+                            .catch(error => {
+                                console.error('Error fetching IP:', error);
+                                output.textContent += '\nError fetching IP address.';
+                            });
+                        break;
+                case 'purchases':
+                    output.textContent += ``
+                    break;
                 case 'login':
-                    output.textContent += `rats.. we ran into an error`
+                    output.textContent += `\nAn unexpected error occurred. Please try again. If the problem continues, please restart device.
+                    `
                     break;
                 case 'contact':
                     output.textContent += `\nEmail: bender.work@gmx.com \nPhone: 657-273-1134
@@ -147,24 +200,9 @@ The Command completed successfully.
                     }
                     break;
                     case 'store': // hey you aren't suppose to see this
-                        output.textContent +=`
-┌───────────────────────────────┐          ┌───────────────────────────────┐          ┌───────────────────────────────┐  
-│                               │          │                               │          │                               │ 
-│                               │          │                               │          │                               │
-│                               │          │                               │          │                               │ 
-│                               │          │                               │          │                               │
-│                               │          │                               │          │                               │
-│                               │          │                               │          │                               │
-│                               │──────────│                               │──────────│                               │
-│                               │          │                               │          │                               │
-│                               │          │                               │          │                               │
-│                               │          │                               │          │                               │
-│                               │          │                               │          │                               │
-│                               │          │                               │          │                               │
-│                               │          │                               │          │                               │                          
-└───────────────────────────────┘          └───────────────────────────────┘          └───────────────────────────────┘               
-             error                                       error                                      error
+                    output.textContent += `
             `;
+            output.innerHTML += asciiArt;
                         break;
                     case 'music':
                         const songs = [
@@ -229,12 +267,12 @@ The Command completed successfully.
                             gameActive = true;
                             attempts = 0;
                             randomNumber = Math.floor(Math.random() * 100) + 1;
-                            output.textContent += `\nGuess a number between 1 and 100; Type exit to quit game
+                            output.textContent += `\nGuess a number between 1 and 100; Type exit to quit game \nCurrent Prize: $100
                             `; // useless game command
                             break;
 
                     default:
-                        output.textContent += `\n'${cmd}' is not recognized as an internal or external command,\noperable program or batch file.
+                        output.textContent += `\n'${cmd}' is not recognized as an internal or external command,\nType 'help' for a list of commands.
                         `; // error for wrong command
             break;
             
