@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Command Prompt</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-black text-green-400 font-mono p-4">
+
+  <div id="content">
+    <pre id="output" class="whitespace-pre-wrap">
+ __   __   ______     __     ______     __   __     ______        __     __     ______     ______     __         _____    
+/\ \ / /  /\  == \   /\ \   /\  __ \   /\ "-.\ \   /\  ___\      /\ \  _ \ \   /\  __ \   /\  == \   /\ \       /\  __-.  
+\ \ \'/   \ \  __<   \ \ \  \ \  __ \  \ \ \-.  \  \ \___  \     \ \ \/ ".\ \  \ \ \/\ \  \ \  __<   \ \ \____  \ \ \/\ \ 
+ \ \__|    \ \_\ \_\  \ \_\  \ \_\ \_\  \ \_\\"\_\  \/\_____\     \ \__/".~\_\  \ \_____\  \ \_\ \_\  \ \_____\  \ \____- 
+  \/_/      \/_/ /_/   \/_/   \/_/\/_/   \/_/ \/_/   \/_____/      \/_/   \/_/   \/_____/   \/_/ /_/   \/_____/   \/____/
+                                                              v.1.0
+    </pre>
+    <div id="inputLine" class="flex items-center mt-2">
+      <span id="prompt" class="mr-2">></span>
+      <input id="input" type="text" class="flex-1 bg-black text-green-400 outline-none border-none font-mono" autofocus />
+    </div>
+  </div>
+
+  <script src="scripts.js" defer></script>
+</body>
+</html>
