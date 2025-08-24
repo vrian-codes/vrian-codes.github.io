@@ -5,21 +5,17 @@ let attempts;
 var password = prompt("Please enter the password:");
 
 if (password === "password") {
-    // If password is correct, display the content
     document.getElementById("content").style.display = "block";
 } else {
-    // If password is incorrect, or cancel is clicked (password is null), hide the content
     document.getElementById("content").style.display = "none";
     alert("Incorrect password or access canceled. Access denied.");
-    // Redirect to another page
-    window.location.href = "https://vrians.world/accessdenied"; // Replace this URL with the one you want to redirect to
+    window.location.href = "https://vrians.world/accessdenied";
 }
 
 function gameListener(cmd) {
     const guess = Number(cmd);
     if (isNaN(guess)) {
-        output.textContent += `\nInvalid input. Please enter a number.
-        `;
+        output.textContent += `\nInvalid input. Please enter a number.`;
     } else {
         attempts++;
         if (guess === randomNumber) {
@@ -35,8 +31,7 @@ function gameListener(cmd) {
             output.textContent += `\n${guess} is too low. Try again.
             `;
         } else if (guess > randomNumber) {
-            output.textContent += `\n${guess} is too high. Try again.
-            `; // code for useless game
+            output.textContent += `\n${guess} is too high. Try again.`;
         }
     }
 }
@@ -65,26 +60,25 @@ document.addEventListener("DOMContentLoaded", function () {
                        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠃⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠁⠀⠀⠀
                        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠒`;
 
-const helpText = "\nType 'help' to list all available commands."; // Ensure to start with a newline if needed
+const helpText = "\nType 'help' to list all available commands.";
 
 let charIndex = 0;
-let totalText = introText + helpText; // Concatenate intro and help text
+let totalText = introText + helpText;
                    
 function typeIntroText() {
     if (charIndex < totalText.length) {
             output.textContent += totalText.charAt(charIndex);
                 charIndex++;
-            setTimeout(typeIntroText, 1.0); // Maintain the same typing speed throughout
+            setTimeout(typeIntroText, 1.0);
                 } else {
-            input.disabled = false; // Enable input after typing is complete
+            input.disabled = false;
             input.focus();
                 }
              }
-            input.disabled = true; // Disable input initially
+            input.disabled = true;
                 typeIntroText();
 
     document.body.addEventListener('click', function(event) {
-    // Prevent focusing the input field if the click was on an input, button, or link
         if (!['INPUT', 'BUTTON', 'A'].includes(event.target.tagName)) {
             input.focus();
                 }
@@ -98,7 +92,7 @@ function typeIntroText() {
             output.textContent += '\n' + prompt.textContent + cmd;
 
             if (gameActive) {
-                if (cmd.toLowerCase() === 'exit') { // exits game and returns to prompt
+                if (cmd.toLowerCase() === 'exit') {
                     gameActive = false;
                     output.textContent += `\nGame over.`;
                 } else {
@@ -124,31 +118,27 @@ Game                Guess a Number 1-100 for a prize
 Location            Displays brian's current location
 Music               Displays a random song from brian's music
                     
-[+] User Activity:
+[+] User Commands:
                  
 Whoami              Displays information about your device
 Clear               Clear entries              
 
-`; // help commands 
+`;
                     break;
                 case 'date':
-                            ; // users current timezone
+                            ;
                     break;
                 case 'instagram':
-                    const url3 = 'https://www.instagram.com/myhandsareclammy/'; // instagram
+                    const url3 = 'https://www.instagram.com/myhandsareclammy/';
                     window.open(url3, '_blank');
                     break;
                     case 'whoami':
-                        // Fetch the IP address from ipify
                         fetch('https://api.ipify.org?format=json')
                             .then(response => response.json())
                             .then(data => {
                                 const ipInfo = `\nIP Address: ${data.ip}`;
-                                // Fetch browser information
                                 const browserInfo = `Browser: ${navigator.appName}, \nVersion: ${navigator.appVersion}, \nPlatform: ${navigator.platform}`;
-                                // Fetch screen resolution
                                 const screenSize = `Screen Resolution: ${window.screen.width} x ${window.screen.height}`;
-                                // Fetch local time and timezone
                                 const timezone = `Local Time: ${new Date().toLocaleTimeString()}, Time Zone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`;
         
                                 output.textContent += `\n${ipInfo}\n${browserInfo}\n${screenSize}\n${timezone}`;
@@ -167,10 +157,10 @@ Clear               Clear entries
                     break;
                 case 'contact':
                     output.textContent += `\nEmail: bender.work@gmx.com \nPhone: 657-273-1134
-                    `; // contact
+                    `;
                         break;
                 case 'playlist':
-                    const url = 'https://music.apple.com/us/playlist/playlist-for-my-funeral/pl.u-vxy6kjMCPW56lK'; // playlist
+                    const url = 'https://music.apple.com/us/playlist/playlist-for-my-funeral/pl.u-vxy6kjMCPW56lK';
                     window.open(url, '_blank');
                         break;
                 case 'net user':
@@ -184,13 +174,13 @@ The Command completed successfully.
                     `;
                         break;
                 case 'twitter':
-                    const url2 = 'https://twitter.com/vriannn'; // twitter
+                    const url2 = 'https://twitter.com/vriannn';
                     window.open(url2, '_blank');
                     break;
                 case 'location':
-                    const locations = ['at HOME', ]; // location status
+                    const locations = ['at HOME', ];
                     const currentHour = new Date().getHours();
-                    if (currentHour >= 7 && currentHour < 15) { // 7 AM to 3 PM
+                    if (currentHour >= 7 && currentHour < 15) {
                         output.textContent += `\nbrian is at work
                         `;
                     } else {
@@ -199,7 +189,7 @@ The Command completed successfully.
                         `;
                     }
                     break;
-                    case 'store': // hey you aren't suppose to see this
+                    case 'store':
                     output.textContent += `
             `;
             output.innerHTML += asciiArt;
@@ -261,19 +251,19 @@ The Command completed successfully.
                         ];
                         const selectedSong = songs[Math.floor(Math.random() * songs.length)];
                         output.textContent += `\nyou should listen to ${selectedSong}
-                        `; // picking a random song
+                        `;
                         break;
                         case 'game':
                             gameActive = true;
                             attempts = 0;
                             randomNumber = Math.floor(Math.random() * 100) + 1;
                             output.textContent += `\nGuess a number between 1 and 100; Type exit to quit game \nCurrent Prize: $100
-                            `; // useless game command
+                            `;
                             break;
 
                     default:
                         output.textContent += `\n'${cmd}' is not recognized as an internal or external command,\nType 'help' for a list of commands.
-                        `; // error for wrong command
+                        `;
             break;
             
                 }
