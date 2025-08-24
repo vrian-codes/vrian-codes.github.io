@@ -166,13 +166,12 @@
     const POINTS_PER_ASTEROID=10;
 
     // ===== Reference FPS for baseline feel =====
-    // Set to the FPS your desktop "old feel" used (120 default; try 144 or 165 if needed).
-    const REFERENCE_FPS = 165;
+    const REFERENCE_FPS = 120;
 
     // Difficulty & pacing
-    let speed=0.2;              // forward speed tuned for one "reference frame"
+    let speed=0.2;              // forward speed tuned per "reference frame"
     let spawnInterval=70;       // frames @ REFERENCE_FPS between spawns
-    let spawnEverySec=spawnInterval/REFERENCE_FPS; // seconds between spawns (DT-based)
+    let spawnEverySec=spawnInterval/REFERENCE_FPS; // seconds between spawns
     let spawnTimerSec=0;
     let extraSpawnChance=0.0;
 
@@ -322,8 +321,12 @@
     }
 
     function createLaser(){
-      const laser=new THREE.Mesh(new THREE.BoxGeometry(LASER_SIZE.x,LASER_SIZE.y,LASER_SIZE.z),new THREE.MeshPhongMaterial({color:0x00ff99,emissive:0x006644,emissiveIntensity:0.9}));
+      const laser=new THREE.Mesh(
+        new THREE.BoxGeometry(LASER_SIZE.x,LASER_SIZE.y,LASER_SIZE.z),
+        new THREE.MeshPhongMaterial({color:0x00ff99,emissive:0x006644,emissiveIntensity:0.9})
+      );
       laser.position.set(player.position.x,0,PLAYER_Z-0.55);
+      laser.userData.prevZ = laser.position.z; // seed for swept collision
       scene.add(laser); return laser;
     }
 
@@ -382,6 +385,17 @@
       const sum=pR+oR; return (dx*dx+dz*dz)<=sum*sum;
     }
 
+    // ======= helpers for swept laser collision =======
+    function clamp01(t){ return t<0?0:t>1?1:t; }
+    function distPointToSegment2D(px,pz,x0,z0,x1,z1){
+      const vx=x1-x0, vz=z1-z0;
+      const wx=px-x0, wz=pz-z0;
+      const vv=vx*vx+vz*vz;
+      const t = vv>0 ? clamp01((wx*vx+wz*vz)/vv) : 0;
+      const dx=px-(x0+vx*t), dz=pz-(z0+vz*t);
+      return Math.hypot(dx,dz);
+    }
+
     // ======= Game Loop (delta-time with reference FPS) =======
     function animate(){
       requestAnimationFrame(animate);
@@ -391,13 +405,11 @@
       lastTime=now;
       if(dtSec>0.1) dtSec=0.1;
 
-      // Scale all "per-frame tuned" values to the chosen desktop baseline FPS
       const dtMul = dtSec * REFERENCE_FPS;
 
       updateStars(dtMul);
 
       if(gameStarted && !gameOver){
-        // fps-independent lane glide (exponential smoothing)
         const lerpFactor=1 - Math.pow(1 - laneLerp, dtMul);
         player.position.x += (targetX - player.position.x) * lerpFactor;
         const diff=targetX - player.position.x;
@@ -443,27 +455,58 @@
     function updateLasers(dtMul){
       for(let li=lasers.length-1; li>=0; li--){
         const L=lasers[li];
+
+        // --- store previous Z for swept collision
+        const prevZ = L.userData.prevZ ?? L.position.z;
+
+        // advance
         L.position.z -= LASER_SPEED * dtMul;
 
+        // despawn check
         if(L.position.z < OBSTACLE_START_Z - 20){
           scene.remove(L); lasers.splice(li,1); continue;
         }
 
+        // AABB pass (fast path)
+        let hitHandled = false;
         const laserBox=new THREE.Box3().setFromObject(L);
+
         for(let oi=obstacles.length-1; oi>=0; oi--){
           const o=obstacles[oi];
+
+          // quick AABB
           const oBox=new THREE.Box3().setFromObject(o);
           const shrink=0.1; oBox.min.x+=shrink; oBox.max.x-=shrink; oBox.min.y+=shrink; oBox.max.y-=shrink;
 
-          if(laserBox.intersectsBox(oBox)){
+          let intersects = laserBox.intersectsBox(oBox);
+
+          // if AABB missed, do swept segment vs circle in XZ to prevent tunneling
+          if(!intersects){
+            const x0 = L.position.x;
+            // include the laser mesh length in the sweep
+            const segZ0 = Math.min(prevZ, L.position.z) - LASER_SIZE.z*0.5;
+            const segZ1 = Math.max(prevZ, L.position.z) + LASER_SIZE.z*0.5;
+            const dist = distPointToSegment2D(o.position.x, o.position.z, x0, segZ0, x0, segZ1);
+            const oR = (o.userData.r ?? 0.55) + 0.12; // small pad
+            intersects = dist <= oR;
+          }
+
+          if(intersects){
             scene.remove(o); obstacles.splice(oi,1);
             scene.remove(L); lasers.splice(li,1);
+            hitHandled = true;
+
             score+=POINTS_PER_ASTEROID;
             passedThisLevel++; totalPassed++;
             if(phase==='play' && passedThisLevel>=targetThisLevel) beginLevelTransition();
             updateHud();
             break;
           }
+        }
+
+        if(!hitHandled){
+          // keep prevZ updated for next frame
+          L.userData.prevZ = L.position.z;
         }
       }
     }
@@ -546,7 +589,7 @@
       updateHud();
     }
 
-    // Speed bumps and spawn pacing (still difficulty-scaled, but DT-driven & baseline FPS normalized)
+    // Speed & spawn pacing (DT-driven & baseline FPS normalized)
     function applyLevelDifficulty(){
       const increments=Math.floor((level-1)/3);
       speed=Math.min(0.2 + increments*0.015, 0.75);
