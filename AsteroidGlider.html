@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Asteroid Glider</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <style>
     html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
@@ -74,11 +75,13 @@
             Save Score
           </button>
         </div>
+        <!-- Turnstile widget (Managed mode) -->
         <div id="cf-container" class="flex justify-center mb-3">
-        <div class="cf-turnstile"
-       data-sitekey="0x4AAAAAABu-PtUy0saF714Z"
-       data-callback="onTurnstileVerified"></div>
-      </div>
+          <div class="cf-turnstile"
+               data-sitekey="0x4AAAAAABu-PtUy0saF714Z"
+               data-callback="onTurnstileVerified"></div>
+        </div>
+
         <div id="leaderboard" class="glass rounded p-3 max-h-56 overflow-auto mb-3">
           <div class="flex items-center justify-between mb-2">
             <h3 class="text-lg">Leaderboard</h3>
@@ -102,6 +105,10 @@
   <script>
     // ===================== GLOBAL LEADERBOARD =====================
     const SCORES_API = 'https://asteroid-glider-scores.brianrodriguez368.workers.dev/api/scores';
+
+    let turnstileToken = "";
+    window.onTurnstileVerified = (token) => { turnstileToken = token || ""; };
+
     const playerNameInput = document.getElementById('playerNameInput');
     const saveScoreButton = document.getElementById('saveScoreButton');
     const leaderboardList = document.getElementById('leaderboardList');
@@ -130,45 +137,45 @@
         const {scores}=await res.json(); renderBoard(scores);
       }catch(err){ console.error('Leaderboard load failed:',err); setBoardStatus('Error loading leaderboard.'); }
     }
-async function onSaveScoreGlobal() {
-  if (hasSavedThisRun) return;
+    async function onSaveScoreGlobal() {
+      if (hasSavedThisRun) return;
 
-  const name = (playerNameInput?.value || '').trim();
-  if (!name) { playerNameInput?.focus(); playerNameInput.placeholder = 'Enter a name to save'; return; }
+      const name = (playerNameInput?.value || '').trim();
+      if (!name) { playerNameInput?.focus(); playerNameInput.placeholder = 'Enter a name to save'; return; }
 
-  // Require a Turnstile token
-  if (!turnstileToken) {
-    setBoardStatus('Please complete the verification and try again.');
-    return;
-  }
+      if (!turnstileToken) {
+        setBoardStatus('Please complete the verification and try again.');
+        return;
+      }
 
-  saveScoreButton.disabled = true;
-  saveScoreButton.textContent = 'Saving…';
+      saveScoreButton.disabled = true;
+      saveScoreButton.textContent = 'Saving…';
 
-  try {
-    const res = await fetch(SCORES_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'omit',
-      body: JSON.stringify({ name: name.slice(0,24), score, level, turnstileToken })
-    });
+      try {
+        const res = await fetch(SCORES_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'omit',
+          body: JSON.stringify({ name: name.slice(0,24), score, level, turnstileToken })
+        });
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const { scores } = await res.json();
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const { scores } = await res.json();
 
-    hasSavedThisRun = true;
-    saveScoreButton.textContent = 'Saved';
-    saveScoreButton.classList.add('opacity-60');
-    renderBoard(scores);
-  } catch (err) {
-    console.error('Save failed:', err);
-    saveScoreButton.disabled = false;
-    saveScoreButton.textContent = 'Retry Save';
-  } finally {
-    if (window.turnstile) turnstile.reset(); // get a fresh token for next attempt
-    turnstileToken = "";
-  }
-}
+        hasSavedThisRun = true;
+        saveScoreButton.textContent = 'Saved';
+        saveScoreButton.classList.add('opacity-60');
+        renderBoard(scores);
+      } catch (err) {
+        console.error('Save failed:', err);
+        saveScoreButton.disabled = false;
+        saveScoreButton.textContent = 'Retry Save';
+      } finally {
+        if (window.turnstile) turnstile.reset(); // get a fresh token for next attempt
+        turnstileToken = "";
+      }
+    }
+
     // ===================== GAME CODE =====================
     let scene, camera, renderer;
     let player, obstacles=[];
@@ -195,16 +202,14 @@ async function onSaveScoreGlobal() {
     let totalPassed=0;
 
     let score=0;
-    const POINTS_PER_ASTEROID_DODGED = 10;   // when it passes you
-    const POINTS_PER_ASTEROID_SHOT   = 100;  // when you destroy it
+    const POINTS_PER_ASTEROID_DODGED = 10;
+    const POINTS_PER_ASTEROID_SHOT   = 100;
 
-    // ===== Reference FPS for baseline feel =====
     const REFERENCE_FPS = 120;
 
-    // Difficulty & pacing
-    let speed=0.2;              // forward speed tuned per "reference frame"
-    let spawnInterval=70;       // frames @ REFERENCE_FPS between spawns
-    let spawnEverySec=spawnInterval/REFERENCE_FPS; // seconds between spawns
+    let speed=0.2;
+    let spawnInterval=70;
+    let spawnEverySec=spawnInterval/REFERENCE_FPS;
     let spawnTimerSec=0;
     let extraSpawnChance=0.0;
 
@@ -233,7 +238,6 @@ async function onSaveScoreGlobal() {
 
     const PLAYER_Z=2.2, OBSTACLE_START_Z=-80, DESPAWN_Z=6.0;
 
-    // --- delta time
     let lastTime=performance.now();
 
     init();
@@ -304,7 +308,6 @@ async function onSaveScoreGlobal() {
       updateHud();
     }
 
-    // ======= Ship mesh =======
     function createShip(isPlayer=false){
       const group=new THREE.Group();
       const hullMat=new THREE.MeshPhongMaterial({color:0x2a2f33,emissive:0x0b0f10,shininess:80,flatShading:true});
@@ -349,7 +352,6 @@ async function onSaveScoreGlobal() {
       geo.vertices?.forEach?.(v=>{ v.x*=0.8+Math.random()*0.5; v.y*=0.8+Math.random()*0.5; v.z*=0.8+Math.random()*0.5; });
       const mesh=new THREE.Mesh(geo,new THREE.MeshPhongMaterial({color:0x8b6b4e,flatShading:true}));
       mesh.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
-      // slightly tighter radius to reduce edge "brush" deaths
       mesh.userData.r=size*0.50;
       return mesh;
     }
@@ -360,11 +362,10 @@ async function onSaveScoreGlobal() {
         new THREE.MeshPhongMaterial({color:0x00ff99,emissive:0x006644,emissiveIntensity:0.9})
       );
       laser.position.set(player.position.x,0,PLAYER_Z-0.55);
-      laser.userData.prevZ = laser.position.z; // for continuous collision
+      laser.userData.prevZ = laser.position.z;
       scene.add(laser); return laser;
     }
 
-    // ======= Input =======
     function onKeyDown(e){
       if(!gameStarted||gameOver) return;
       let newLane=currentLane;
@@ -398,14 +399,11 @@ async function onSaveScoreGlobal() {
       laserAmmo--; updateHud();
     }
 
-    // ======= Hitboxes =======
     function getPlayerRadius(){
       const spacing=lanes.length>=2?Math.abs(lanes[1]-lanes[0]):2.5;
       const width=Math.min(SHIP_SPAN,spacing*0.72);
-      return width*0.32; // was 0.36 — slightly tighter
+      return width*0.32;
     }
-
-    // point-to-segment distance in XZ
     function clamp01(t){ return t<0?0:t>1?1:t; }
     function distPointToSegment2D(px,pz,x0,z0,x1,z1){
       const vx=x1-x0, vz=z1-z0;
@@ -416,7 +414,6 @@ async function onSaveScoreGlobal() {
       return Math.hypot(dx,dz);
     }
 
-    // ======= Game Loop (delta-time with reference FPS) =======
     function animate(){
       requestAnimationFrame(animate);
 
@@ -424,7 +421,6 @@ async function onSaveScoreGlobal() {
       let dtSec=(now-lastTime)/1000;
       lastTime=now;
       if(dtSec>0.1) dtSec=0.1;
-
       const dtMul = dtSec * REFERENCE_FPS;
 
       updateStars(dtMul);
@@ -472,45 +468,33 @@ async function onSaveScoreGlobal() {
       scene.add(rock); obstacles.push(rock);
     }
 
-    // ======= Continuous laser-vs-asteroid (both move) =======
     function updateLasers(dtMul){
       for(let li=lasers.length-1; li>=0; li--){
         const L=lasers[li];
-
         const prevZ = L.userData.prevZ ?? L.position.z;
         L.position.z -= LASER_SPEED * dtMul;
-
         if(L.position.z < OBSTACLE_START_Z - 20){
           scene.remove(L); lasers.splice(li,1); continue;
         }
-
         let hitHandled = false;
-
         for(let oi=obstacles.length-1; oi>=0; oi--){
           const o=obstacles[oi];
-
-          // Analytic closest-approach in this frame (both moving in Z)
           const xL = L.position.x, xO = o.position.x;
           const dx = xL - xO;
-
           const zL0 = prevZ,          zL1 = L.position.z;
-          const zO0 = o.position.z;   // obstacles haven't advanced yet in this tick
+          const zO0 = o.position.z;
           const zSpeedO = (o.userData.fast? speed*1.4 : speed) * dtMul;
           const zO1 = zO0 + zSpeedO;
-
           const a = zL0 - zO0;
-          const b = (zL1 - zL0) - (zO1 - zO0); // relative z velocity (laser minus asteroid)
-          const tStar = b !== 0 ? clamp01(-a / b) : 0; // time in [0,1] of min separation
+          const b = (zL1 - zL0) - (zO1 - zO0);
+          const tStar = b !== 0 ? clamp01(-a / b) : 0;
           const dzAtMin = a + b*tStar;
-
-          const effR = (o.userData.r ?? 0.5) + (LASER_SIZE.z*0.5) + 0.12; // pad a hair
+          const effR = (o.userData.r ?? 0.5) + (LASER_SIZE.z*0.5) + 0.12;
           const hit = (dx*dx + dzAtMin*dzAtMin) <= (effR*effR);
-
           if(hit){
             scene.remove(o); obstacles.splice(oi,1);
             scene.remove(L); lasers.splice(li,1);
             hitHandled = true;
-
             score += POINTS_PER_ASTEROID_SHOT;
             passedThisLevel++; totalPassed++;
             if(phase==='play' && passedThisLevel>=targetThisLevel) beginLevelTransition();
@@ -518,37 +502,27 @@ async function onSaveScoreGlobal() {
             break;
           }
         }
-
-        if(!hitHandled){
-          L.userData.prevZ = L.position.z;
-        }
+        if(!hitHandled){ L.userData.prevZ = L.position.z; }
       }
     }
 
-    // ======= Swept asteroid movement vs. player circle =======
     function updateObstacles(dtMul){
       for(let i=obstacles.length-1; i>=0; i--){
         const o=obstacles[i];
         const zSpeed=(o.userData.fast? speed*1.4 : speed) * dtMul;
-
         const z0 = o.position.z;
         const z1 = z0 + zSpeed;
-
-        // robust swept test (segment vs circle) + small grace
         const pX = player.position.x, pZ = player.position.z;
         const dist = distPointToSegment2D(pX, pZ, o.position.x, z0, o.position.x, z1);
         const pR = getPlayerRadius();
         const oR = (o.userData.r ?? 0.5);
-        const GRACE = 0.06; // lets you brush past without dying
+        const GRACE = 0.06;
         if(dist <= Math.max(0, pR + oR - GRACE)){
           return endGame();
         }
-
-        // advance position and spin after collision check
         o.position.z = z1;
         o.rotation.x += (0.01 + speed*0.05) * dtMul;
         o.rotation.y += (0.02 + speed*0.05) * dtMul;
-
         if(o.position.z > DESPAWN_Z){
           scene.remove(o); obstacles.splice(i,1);
           score += POINTS_PER_ASTEROID_DODGED;
@@ -573,7 +547,6 @@ async function onSaveScoreGlobal() {
       starField.geometry.attributes.position.needsUpdate=true;
     }
 
-    // ======= Leveling & UI =======
     function updateHud(){ scoreBoard.textContent=`Lvl ${level} • Score: ${score} • Lasers: ${laserAmmo}/${LASER_MAX}`; }
     function showRowNotice(text){
       rowNotice.textContent=text;
@@ -588,40 +561,23 @@ async function onSaveScoreGlobal() {
     function startClearCorridor(){
       level++; passedThisLevel=0;
       targetThisLevel=baseAsteroidsTarget + (level-1)*10;
-
       laserAmmo=Math.min(LASER_MAX,laserAmmo+1);
-
-      toastLevel.textContent=level;
-      levelToast.style.display='block';
-      setTimeout(()=>{ levelToast.style.display='none'; },1000);
-
+      toastLevel.textContent=level; levelToast.style.display='block'; setTimeout(()=>{ levelToast.style.display='none'; },1000);
       const prevX=player.position.x;
       let rowsAdded=0;
       if(level===4){ lanes=[-5,-2.5,0,2.5,5]; rowsAdded=2; }
       else if(level===10){ lanes=[-7.5,-5,-2.5,0,2.5,5,7.5]; rowsAdded=2; }
-
-      if(rowsAdded>0){
-        showRowNotice(`+${rowsAdded} Rows added`);
-        currentLane=nearestLaneIndex(prevX,lanes);
-        targetX=lanes[currentLane]; // glide; don't snap
-      }else{
-        targetX=lanes[currentLane];
-      }
-
+      if(rowsAdded>0){ showRowNotice(`+${rowsAdded} Rows added`); currentLane=nearestLaneIndex(prevX,lanes); targetX=lanes[currentLane]; }
+      else{ targetX=lanes[currentLane]; }
       applyLevelDifficulty();
-
-      corridorStartTime=performance.now();
-      phase='transition_corridor';
-
-      updateHud();
+      corridorStartTime=performance.now(); phase='transition_corridor'; updateHud();
     }
 
-    // Speed & spawn pacing (DT-driven & baseline FPS normalized)
     function applyLevelDifficulty(){
       const increments=Math.floor((level-1)/3);
       speed=Math.min(0.2 + increments*0.015, 0.75);
-      spawnInterval=Math.max(24, 70 - (level-1)*4); // in "REFERENCE_FPS frames"
-      spawnEverySec=spawnInterval/REFERENCE_FPS;     // convert to seconds
+      spawnInterval=Math.max(24, 70 - (level-1)*4);
+      spawnEverySec=spawnInterval/REFERENCE_FPS;
       extraSpawnChance=Math.min(0.05 + (level-1)*0.03, 0.45);
     }
 
@@ -640,20 +596,14 @@ async function onSaveScoreGlobal() {
       gameStarted=true;
       level=1; passedThisLevel=0; targetThisLevel=baseAsteroidsTarget; totalPassed=0;
       score=0;
-
       laserAmmo=3;
       lasers.forEach(L=>scene.remove(L)); lasers=[];
-
       speed=0.2; spawnInterval=70; spawnEverySec=spawnInterval/REFERENCE_FPS; spawnTimerSec=0;
       extraSpawnChance=0.0;
-
       phase='play'; corridorStartTime=0; frame=0; gameOver=false;
-
       lanes=[-2.5,0,2.5]; currentLane=1; targetX=lanes[currentLane];
       player.position.set(lanes[currentLane],0,PLAYER_Z); player.rotation.z=0;
-
       obstacles.forEach(o=>scene.remove(o)); obstacles=[];
-
       const pos=starField.geometry.attributes.position.array;
       for(let i=0;i<STAR_COUNT;i++){
         pos[i*3+0]=(Math.random()-0.5)*60;
@@ -661,13 +611,10 @@ async function onSaveScoreGlobal() {
         pos[i*3+2]=-Math.random()*200;
       }
       starField.geometry.attributes.position.needsUpdate=true;
-
       rowNotice.textContent=''; rowNotice.classList.add('opacity-0'); rowNotice.classList.remove('opacity-100');
-
       scoreBoard.textContent=`Lvl ${level} • Score: ${score} • Lasers: ${laserAmmo}/${LASER_MAX}`;
       gameOverModal.style.display='none';
       instructions.style.display='block';
-
       lastTime=performance.now();
     }
 
