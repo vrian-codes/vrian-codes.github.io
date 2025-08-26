@@ -4,6 +4,9 @@ let attempts;
 
 const SCORES_API = '/api/scores';
 
+let turnstileToken = "";
+window.onTurnstileVerified = (token) => { turnstileToken = token || ""; };
+
 function gameListener(cmd) {
     const guess = Number(cmd);
     if (isNaN(guess)) {
