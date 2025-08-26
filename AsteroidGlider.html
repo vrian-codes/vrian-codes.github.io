@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Asteroid Glider</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <style>
     html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
     #gameContainer { width: 100%; max-width: 900px; height: 640px; margin: 0 auto; position: relative; }
@@ -74,6 +74,11 @@
             Save Score
           </button>
         </div>
+        <div id="cf-container" class="flex justify-center mb-3">
+        <div class="cf-turnstile"
+       data-sitekey="0x4AAAAAABu-PtUy0saF714Z"
+       data-callback="onTurnstileVerified"></div>
+      </div>
         <div id="leaderboard" class="glass rounded p-3 max-h-56 overflow-auto mb-3">
           <div class="flex items-center justify-between mb-2">
             <h3 class="text-lg">Leaderboard</h3>
@@ -125,18 +130,45 @@
         const {scores}=await res.json(); renderBoard(scores);
       }catch(err){ console.error('Leaderboard load failed:',err); setBoardStatus('Error loading leaderboard.'); }
     }
-    async function onSaveScoreGlobal(){
-      if(hasSavedThisRun) return;
-      const name=(playerNameInput?.value||'').trim();
-      if(!name){ playerNameInput?.focus(); playerNameInput.placeholder='Enter a name to save'; return; }
-      saveScoreButton.disabled=true; saveScoreButton.textContent='Saving…';
-      try{
-        const res=await fetch(SCORES_API,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'omit',body:JSON.stringify({name:name.slice(0,24),score,level})});
-        if(!res.ok) throw new Error(`HTTP ${res.status}`);
-        const {scores}=await res.json(); hasSavedThisRun=true; saveScoreButton.textContent='Saved'; saveScoreButton.classList.add('opacity-60'); renderBoard(scores);
-      }catch(err){ console.error('Save failed:',err); saveScoreButton.disabled=false; saveScoreButton.textContent='Retry Save'; }
-    }
+async function onSaveScoreGlobal() {
+  if (hasSavedThisRun) return;
 
+  const name = (playerNameInput?.value || '').trim();
+  if (!name) { playerNameInput?.focus(); playerNameInput.placeholder = 'Enter a name to save'; return; }
+
+  // Require a Turnstile token
+  if (!turnstileToken) {
+    setBoardStatus('Please complete the verification and try again.');
+    return;
+  }
+
+  saveScoreButton.disabled = true;
+  saveScoreButton.textContent = 'Saving…';
+
+  try {
+    const res = await fetch(SCORES_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'omit',
+      body: JSON.stringify({ name: name.slice(0,24), score, level, turnstileToken })
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const { scores } = await res.json();
+
+    hasSavedThisRun = true;
+    saveScoreButton.textContent = 'Saved';
+    saveScoreButton.classList.add('opacity-60');
+    renderBoard(scores);
+  } catch (err) {
+    console.error('Save failed:', err);
+    saveScoreButton.disabled = false;
+    saveScoreButton.textContent = 'Retry Save';
+  } finally {
+    if (window.turnstile) turnstile.reset(); // get a fresh token for next attempt
+    turnstileToken = "";
+  }
+}
     // ===================== GAME CODE =====================
     let scene, camera, renderer;
     let player, obstacles=[];
