@@ -56,11 +56,12 @@
 
       <div id="startModal" class="text-green-400 font-mono p-6 text-center">
         <h2 class="text-xl mb-2">Asteroid Glider</h2>
-        <p class="mb-4 opacity-80 text-sm">Dodge asteroids, shoot threats, and level up.</p>
+        <p class="mb-3 opacity-80 text-sm">Dodge asteroids, shoot threats, and level up.</p>
         <button id="startButton"
                 class="pointer-events-auto border border-green-400/40 px-5 py-2 rounded hover:bg-green-400/10 transition font-mono">
           Start
         </button>
+        <div id="startError" class="text-red-400 text-sm mt-2 min-h-[1.25rem]"></div>
       </div>
 
       <div id="gameOverModal" class="text-green-400 font-mono p-4 max-w-md">
@@ -76,8 +77,6 @@
             Save Score
           </button>
         </div>
-        <!-- Invisible Turnstile mount target (no visible checkbox) -->
-        <div id="cf-container" class="flex justify-center mb-3"><div id="turnstile-target"></div></div>
 
         <div id="leaderboard" class="glass rounded p-3 max-h-56 overflow-auto mb-3">
           <div class="flex items-center justify-between mb-2">
@@ -96,6 +95,9 @@
           </button>
         </div>
       </div>
+
+      <!-- Invisible Turnstile mount (kept outside modals so it always renders) -->
+      <div id="turnstile-target" style="position:absolute;left:-9999px;top:-9999px;"></div>
     </div>
   </div>
 
@@ -107,21 +109,44 @@
     const API_BASE = '/api/session';
 
     // Turnstile (Invisible)
-    let turnstileToken = "";
+    const TURNSTILE_SITE_KEY = '0x4AAAAAABu-PtUy0saF714Z';
+    let turnstileToken = '';
     let turnstileWidgetId = null;
-    window.onTurnstileVerified = (token) => { turnstileToken = token || ""; };
+
+    window.onTurnstileVerified = (token) => { turnstileToken = token || ''; };
+
     function mountTurnstile(){
-      const mount = document.getElementById('turnstile-target');
-      if(!mount) return;
-      if(window.turnstile){
-        turnstileWidgetId = turnstile.render(mount, {
-          sitekey: '0x4AAAAAABu-PtUy0saF714Z',
-          size: 'invisible',
-          callback: onTurnstileVerified
-        });
-      } else { setTimeout(mountTurnstile, 300); }
+      if (!window.turnstile) { setTimeout(mountTurnstile, 150); return; }
+      if (turnstileWidgetId) return;
+      turnstile.ready(() => {
+        try {
+          turnstileWidgetId = turnstile.render('#turnstile-target', {
+            sitekey: TURNSTILE_SITE_KEY,
+            size: 'invisible',
+            callback: onTurnstileVerified,
+            'error-callback': () => { turnstileToken = ''; }
+          });
+          // Pre-prime a token in the background
+          turnstile.execute(turnstileWidgetId);
+        } catch (e) { console.error('Turnstile render failed', e); }
+      });
     }
     document.addEventListener('DOMContentLoaded', mountTurnstile);
+
+    async function ensureTurnstileToken(timeoutMs = 4000){
+      // If we already have a fresh token, use it
+      if (turnstileToken) return turnstileToken;
+      if (window.turnstile && turnstileWidgetId) {
+        try { turnstile.execute(turnstileWidgetId); } catch{}
+      }
+      const started = performance.now();
+      return await new Promise((resolve, reject) => {
+        const iv = setInterval(() => {
+          if (turnstileToken) { clearInterval(iv); resolve(turnstileToken); }
+          if (performance.now() - started > timeoutMs) { clearInterval(iv); reject(new Error('Turnstile timeout')); }
+        }, 100);
+      });
+    }
 
     // Server session + batching state
     let serverSessionId = '';
@@ -175,10 +200,6 @@
       if(!name){ playerNameInput?.focus(); playerNameInput.placeholder='Enter a name to save'; return; }
       if(!serverSessionId){ setBoardStatus('Session expired. Restart and try again.'); return; }
 
-      // ensure a fresh token before finalize (invisible)
-      if(!turnstileToken && window.turnstile && turnstileWidgetId){ await turnstile.execute(turnstileWidgetId); }
-      if(!turnstileToken){ setBoardStatus('Please try again (verification).'); return; }
-
       saveScoreButton.disabled=true; saveScoreButton.textContent='Saving…';
       try{
         // send any remaining deltas before finalize
@@ -186,6 +207,7 @@
           const d=queuedDodged, s=queuedShot, l=queuedLasersFired; queuedDodged=queuedShot=queuedLasersFired=0;
           await apiPost(`${API_BASE}/batch`, { sessionId: serverSessionId, dodgedDelta:d, shotDelta:s, lasersFiredDelta:l, levelMax: level });
         }
+        // Finalize does NOT need a Turnstile token (verified at start)
         const { scores, score:serverScore, level:serverLevel } = await apiPost(`${API_BASE}/finalize`, { sessionId: serverSessionId, name: name.slice(0,24) });
         hasSavedThisRun=true;
         saveScoreButton.textContent='Saved'; saveScoreButton.classList.add('opacity-60');
@@ -193,7 +215,6 @@
         finalLevelDisplay.textContent=`Final Level: ${serverLevel}`;
         renderBoard(scores);
       }catch(err){ console.error('Save failed:',err); saveScoreButton.disabled=false; saveScoreButton.textContent='Retry Save'; }
-      finally{ if(window.turnstile && turnstileWidgetId) turnstile.reset(turnstileWidgetId); turnstileToken=""; }
     }
 
     // ===================== GAME CODE =====================
@@ -249,6 +270,7 @@
     const gameOverModal=document.getElementById('gameOverModal');
     const startModal=document.getElementById('startModal');
     const startButton=document.getElementById('startButton');
+    const startError=document.getElementById('startError');
     const finalScoreDisplay=document.getElementById('finalScore');
     const finalLevelDisplay=document.getElementById('finalLevel');
     const restartButton=document.getElementById('restartButton');
@@ -299,7 +321,7 @@
       gameCanvas.addEventListener('touchend',onTouchEnd,{passive:false});
 
       // Buttons
-      startButton.addEventListener('click', ()=>{ startGame().catch(console.error); });
+      startButton.addEventListener('click', onStartClicked);
       restartButton.addEventListener('click', ()=>{ restart().catch(console.error); });
       saveScoreButton?.addEventListener('click', onSaveScoreGlobal);
 
@@ -308,7 +330,33 @@
       updateHud();
     }
 
+    async function onStartClicked(){
+      startError.textContent = '';
+      startButton.disabled = true;
+      try{
+        await startGame();
+      }catch(err){
+        console.error(err);
+        startError.textContent = 'Could not start (verification/API). Check site key & routes.';
+      }finally{
+        startButton.disabled = false;
+      }
+    }
+
     async function startGame(){
+      // Acquire/refresh Turnstile token before calling /start
+      if (!turnstileWidgetId) mountTurnstile();
+      turnstileToken = '';
+      await ensureTurnstileToken();
+
+      // ---- server session start ----
+      const sess = await apiPost(`${API_BASE}/start`, { turnstileToken });
+      serverSessionId = sess.sessionId || '';
+      if (!serverSessionId) throw new Error('No session from API');
+      if (window.turnstile && turnstileWidgetId) turnstile.reset(turnstileWidgetId);
+      turnstileToken = '';
+
+      // ==== now actually initialize game state ====
       gameStarted=true; gameOver=false;
       lanes=[-2.5,0,2.5]; currentLane=1; targetX=lanes[currentLane];
       level=1; passedThisLevel=0; targetThisLevel=baseAsteroidsTarget; totalPassed=0;
@@ -322,15 +370,7 @@
 
       phase='play'; corridorStartTime=0; frame=0;
       player.position.set(lanes[currentLane],0,PLAYER_Z); player.rotation.z=0;
-
       lastTime=performance.now();
-
-      // ---- server session start ----
-      if(!turnstileToken && window.turnstile && turnstileWidgetId){ await turnstile.execute(turnstileWidgetId); }
-      const sess = await apiPost(`${API_BASE}/start`, { turnstileToken });
-      serverSessionId = sess.sessionId || '';
-      turnstileToken = '';
-      queuedDodged=queuedShot=queuedLasersFired=0; lastBatchAtMs=0;
 
       instructions.style.display='block';
       startModal.style.display='none';
