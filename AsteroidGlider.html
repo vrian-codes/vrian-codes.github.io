@@ -6,6 +6,7 @@
   <title>Asteroid Glider</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Turnstile loader (Invisible mode) -->
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <style>
     html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
@@ -75,12 +76,8 @@
             Save Score
           </button>
         </div>
-        <!-- Turnstile widget (Managed mode) -->
-        <div id="cf-container" class="flex justify-center mb-3">
-          <div class="cf-turnstile"
-               data-sitekey="0x4AAAAAABu-PtUy0saF714Z"
-               data-callback="onTurnstileVerified"></div>
-        </div>
+        <!-- Invisible Turnstile mount target (no visible checkbox) -->
+        <div id="cf-container" class="flex justify-center mb-3"><div id="turnstile-target"></div></div>
 
         <div id="leaderboard" class="glass rounded p-3 max-h-56 overflow-auto mb-3">
           <div class="flex items-center justify-between mb-2">
@@ -103,12 +100,46 @@
   </div>
 
   <script>
-    // ===================== GLOBAL LEADERBOARD =====================
-    const SCORES_API = '/api/scores';
+    // ===================== GLOBAL LEADERBOARD (GET only) =====================
+    const SCORES_API = '/api/scores'; // same-origin GET for leaderboard
 
+    // ===================== SERVER-AUTHORITATIVE SCORING =====================
+    const API_BASE = '/api/session';
+
+    // Turnstile (Invisible)
     let turnstileToken = "";
+    let turnstileWidgetId = null;
     window.onTurnstileVerified = (token) => { turnstileToken = token || ""; };
+    function mountTurnstile(){
+      const mount = document.getElementById('turnstile-target');
+      if(!mount) return;
+      if(window.turnstile){
+        turnstileWidgetId = turnstile.render(mount, {
+          sitekey: 'YOUR_TURNSTILE_SITE_KEY', // <-- replace with your site key
+          size: 'invisible',
+          callback: onTurnstileVerified
+        });
+      } else { setTimeout(mountTurnstile, 300); }
+    }
+    document.addEventListener('DOMContentLoaded', mountTurnstile);
 
+    // Server session + batching state
+    let serverSessionId = '';
+    let queuedDodged = 0, queuedShot = 0, queuedLasersFired = 0;
+    let lastBatchAtMs = 0;
+
+    async function apiPost(path, body){
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'omit',
+        body: JSON.stringify(body)
+      });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    }
+
+    // ===================== LEADERBOARD UI =====================
     const playerNameInput = document.getElementById('playerNameInput');
     const saveScoreButton = document.getElementById('saveScoreButton');
     const leaderboardList = document.getElementById('leaderboardList');
@@ -124,7 +155,7 @@
         const when=new Date(e.date||Date.now()).toLocaleDateString(undefined,{month:'short',day:'numeric'});
         const li=document.createElement('li');
         li.style.display='grid'; li.style.gridTemplateColumns='2rem 1fr auto'; li.style.gap='0.5rem';
-        li.innerHTML=`<span class="opacity-70">${i+1}.</span><span class="name">${esc(e.name||'')}</span><span class="opacity-80">Score ${e.score} • L${e.level} • ${when}</span>`;
+        li.innerHTML=`<span class=\"opacity-70\">${i+1}.</span><span class=\"name\">${esc(e.name||'')}</span><span class=\"opacity-80\">Score ${e.score} • L${e.level} • ${when}</span>`;
         leaderboardList.appendChild(li);
       });
     }
@@ -137,43 +168,32 @@
         const {scores}=await res.json(); renderBoard(scores);
       }catch(err){ console.error('Leaderboard load failed:',err); setBoardStatus('Error loading leaderboard.'); }
     }
-    async function onSaveScoreGlobal() {
-      if (hasSavedThisRun) return;
 
-      const name = (playerNameInput?.value || '').trim();
-      if (!name) { playerNameInput?.focus(); playerNameInput.placeholder = 'Enter a name to save'; return; }
+    async function onSaveScoreGlobal(){
+      if(hasSavedThisRun) return;
+      const name=(playerNameInput?.value||'').trim();
+      if(!name){ playerNameInput?.focus(); playerNameInput.placeholder='Enter a name to save'; return; }
+      if(!serverSessionId){ setBoardStatus('Session expired. Restart and try again.'); return; }
 
-      if (!turnstileToken) {
-        setBoardStatus('Please complete the verification and try again.');
-        return;
-      }
+      // ensure a fresh token before finalize (invisible)
+      if(!turnstileToken && window.turnstile && turnstileWidgetId){ await turnstile.execute(turnstileWidgetId); }
+      if(!turnstileToken){ setBoardStatus('Please try again (verification).'); return; }
 
-      saveScoreButton.disabled = true;
-      saveScoreButton.textContent = 'Saving…';
-
-      try {
-        const res = await fetch(SCORES_API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'omit',
-          body: JSON.stringify({ name: name.slice(0,24), score, level, turnstileToken })
-        });
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const { scores } = await res.json();
-
-        hasSavedThisRun = true;
-        saveScoreButton.textContent = 'Saved';
-        saveScoreButton.classList.add('opacity-60');
+      saveScoreButton.disabled=true; saveScoreButton.textContent='Saving…';
+      try{
+        // send any remaining deltas before finalize
+        if(serverSessionId && (queuedDodged||queuedShot||queuedLasersFired)){
+          const d=queuedDodged, s=queuedShot, l=queuedLasersFired; queuedDodged=queuedShot=queuedLasersFired=0;
+          await apiPost(`${API_BASE}/batch`, { sessionId: serverSessionId, dodgedDelta:d, shotDelta:s, lasersFiredDelta:l, levelMax: level });
+        }
+        const { scores, score:serverScore, level:serverLevel } = await apiPost(`${API_BASE}/finalize`, { sessionId: serverSessionId, name: name.slice(0,24) });
+        hasSavedThisRun=true;
+        saveScoreButton.textContent='Saved'; saveScoreButton.classList.add('opacity-60');
+        finalScoreDisplay.textContent=`Score: ${serverScore}`;
+        finalLevelDisplay.textContent=`Final Level: ${serverLevel}`;
         renderBoard(scores);
-      } catch (err) {
-        console.error('Save failed:', err);
-        saveScoreButton.disabled = false;
-        saveScoreButton.textContent = 'Retry Save';
-      } finally {
-        if (window.turnstile) turnstile.reset(); // get a fresh token for next attempt
-        turnstileToken = "";
-      }
+      }catch(err){ console.error('Save failed:',err); saveScoreButton.disabled=false; saveScoreButton.textContent='Retry Save'; }
+      finally{ if(window.turnstile && turnstileWidgetId) turnstile.reset(turnstileWidgetId); turnstileToken=""; }
     }
 
     // ===================== GAME CODE =====================
@@ -277,16 +297,18 @@
       window.addEventListener('keydown',onKeyDown);
       gameCanvas.addEventListener('touchstart',onTouchStart,{passive:false});
       gameCanvas.addEventListener('touchend',onTouchEnd,{passive:false});
-      restartButton.addEventListener('click',restart);
-      startButton.addEventListener('click',startGame);
-      saveScoreButton?.addEventListener('click',onSaveScoreGlobal);
+
+      // Buttons
+      startButton.addEventListener('click', ()=>{ startGame().catch(console.error); });
+      restartButton.addEventListener('click', ()=>{ restart().catch(console.error); });
+      saveScoreButton?.addEventListener('click', onSaveScoreGlobal);
 
       window.addEventListener('resize',onResize);
 
       updateHud();
     }
 
-    function startGame(){
+    async function startGame(){
       gameStarted=true; gameOver=false;
       lanes=[-2.5,0,2.5]; currentLane=1; targetX=lanes[currentLane];
       level=1; passedThisLevel=0; targetThisLevel=baseAsteroidsTarget; totalPassed=0;
@@ -302,6 +324,13 @@
       player.position.set(lanes[currentLane],0,PLAYER_Z); player.rotation.z=0;
 
       lastTime=performance.now();
+
+      // ---- server session start ----
+      if(!turnstileToken && window.turnstile && turnstileWidgetId){ await turnstile.execute(turnstileWidgetId); }
+      const sess = await apiPost(`${API_BASE}/start`, { turnstileToken });
+      serverSessionId = sess.sessionId || '';
+      turnstileToken = '';
+      queuedDodged=queuedShot=queuedLasersFired=0; lastBatchAtMs=0;
 
       instructions.style.display='block';
       startModal.style.display='none';
@@ -374,79 +403,48 @@
       if(e.code==='Space'||e.key===' '||e.key==='Spacebar') shootLaser();
       if(newLane!==currentLane){ currentLane=newLane; targetX=lanes[currentLane]; }
     }
-    function onTouchStart(ev){
-      if(!gameStarted||gameOver) return;
-      ev.preventDefault();
-      const t=ev.touches[0]; touchStartX=t.clientX; touchStartY=t.clientY; touchStartTime=performance.now();
-    }
+    function onTouchStart(ev){ if(!gameStarted||gameOver) return; ev.preventDefault(); const t=ev.touches[0]; touchStartX=t.clientX; touchStartY=t.clientY; touchStartTime=performance.now(); }
     function onTouchEnd(ev){
-      if(!gameStarted||gameOver) return;
-      ev.preventDefault();
-      const t=ev.changedTouches[0];
-      const dx=t.clientX-touchStartX, dy=t.clientY-touchStartY, dist=Math.hypot(dx,dy), dt=performance.now()-touchStartTime;
+      if(!gameStarted||gameOver) return; ev.preventDefault();
+      const t=ev.changedTouches[0]; const dx=t.clientX-touchStartX, dy=t.clientY-touchStartY, dist=Math.hypot(dx,dy), dt=performance.now()-touchStartTime;
       if(Math.abs(dx)>=SWIPE_THRESHOLD && Math.abs(dx)>=Math.abs(dy)){
-        let newLane=currentLane;
-        if(dx<0) newLane=Math.max(0,currentLane-1);
-        if(dx>0) newLane=Math.min(lanes.length-1,currentLane+1);
-        if(newLane!==currentLane){ currentLane=newLane; targetX=lanes[currentLane]; }
-        return;
-      }
+        let newLane=currentLane; if(dx<0) newLane=Math.max(0,currentLane-1); if(dx>0) newLane=Math.min(lanes.length-1,currentLane+1);
+        if(newLane!==currentLane){ currentLane=newLane; targetX=lanes[currentLane]; } return; }
       if(dt<=TAP_MAX_TIME && dist<=TAP_MAX_MOVE) shootLaser();
     }
-    function shootLaser(){
-      if(laserAmmo<=0) return;
-      lasers.push(createLaser());
-      laserAmmo--; updateHud();
-    }
+    function shootLaser(){ if(laserAmmo<=0) return; lasers.push(createLaser()); laserAmmo--; queuedLasersFired++; updateHud(); }
 
-    function getPlayerRadius(){
-      const spacing=lanes.length>=2?Math.abs(lanes[1]-lanes[0]):2.5;
-      const width=Math.min(SHIP_SPAN,spacing*0.72);
-      return width*0.32;
-    }
+    function getPlayerRadius(){ const spacing=lanes.length>=2?Math.abs(lanes[1]-lanes[0]):2.5; const width=Math.min(SHIP_SPAN,spacing*0.72); return width*0.32; }
     function clamp01(t){ return t<0?0:t>1?1:t; }
-    function distPointToSegment2D(px,pz,x0,z0,x1,z1){
-      const vx=x1-x0, vz=z1-z0;
-      const wx=px-x0, wz=pz-z0;
-      const vv=vx*vx+vz*vz;
-      const t = vv>0 ? clamp01((wx*vx+wz*vz)/vv) : 0;
-      const dx=px-(x0+vx*t), dz=pz-(z0+vz*t);
-      return Math.hypot(dx,dz);
-    }
+    function distPointToSegment2D(px,pz,x0,z0,x1,z1){ const vx=x1-x0, vz=z1-z0; const wx=px-x0, wz=pz-z0; const vv=vx*vx+vz*vz; const t = vv>0 ? clamp01((wx*vx+wz*vz)/vv) : 0; const dx=px-(x0+vx*t), dz=pz-(z0+vz*t); return Math.hypot(dx,dz); }
 
     function animate(){
       requestAnimationFrame(animate);
-
-      const now=performance.now();
-      let dtSec=(now-lastTime)/1000;
-      lastTime=now;
-      if(dtSec>0.1) dtSec=0.1;
-      const dtMul = dtSec * REFERENCE_FPS;
+      const now=performance.now(); let dtSec=(now-lastTime)/1000; lastTime=now; if(dtSec>0.1) dtSec=0.1; const dtMul = dtSec * REFERENCE_FPS;
 
       updateStars(dtMul);
 
       if(gameStarted && !gameOver){
         const lerpFactor=1 - Math.pow(1 - laneLerp, dtMul);
         player.position.x += (targetX - player.position.x) * lerpFactor;
-        const diff=targetX - player.position.x;
-        player.rotation.z = THREE.MathUtils.clamp(diff*0.12,-0.2,0.2);
+        const diff=targetX - player.position.x; player.rotation.z = THREE.MathUtils.clamp(diff*0.12,-0.2,0.2);
 
         frame++;
-
         if(phase==='play'){
-          spawnTimerSec += dtSec;
-          while(spawnTimerSec >= spawnEverySec){
-            spawnWave();
-            spawnTimerSec -= spawnEverySec;
-          }
-        }else if(phase==='transition_wait_clear'){
-          if(obstacles.length===0) startClearCorridor();
-        }else if(phase==='transition_corridor'){
-          if(performance.now()-corridorStartTime>=CLEAR_CORRIDOR_MS) phase='play';
-        }
+          spawnTimerSec += dtSec; while(spawnTimerSec >= spawnEverySec){ spawnWave(); spawnTimerSec -= spawnEverySec; }
+        } else if(phase==='transition_wait_clear'){ if(obstacles.length===0) startClearCorridor(); }
+        else if(phase==='transition_corridor'){ if(performance.now()-corridorStartTime>=CLEAR_CORRIDOR_MS) phase='play'; }
 
-        updateLasers(dtMul);
-        updateObstacles(dtMul);
+        updateLasers(dtMul); updateObstacles(dtMul);
+
+        // ---- batch send approx every 800ms ----
+        if(serverSessionId){
+          if(now - lastBatchAtMs > 800 && (queuedDodged||queuedShot||queuedLasersFired)){
+            const d=queuedDodged, s=queuedShot, l=queuedLasersFired; queuedDodged=queuedShot=queuedLasersFired=0; lastBatchAtMs = now;
+            apiPost(`${API_BASE}/batch`, { sessionId: serverSessionId, dodgedDelta:d, shotDelta:s, lasersFiredDelta:l, levelMax: level })
+              .catch(err=>{ console.error('batch failed',err); queuedDodged+=d; queuedShot+=s; queuedLasersFired+=l; });
+          }
+        }
       }
 
       camera.position.x = THREE.MathUtils.lerp(camera.position.x, player.position.x*0.5, 0.08);
@@ -454,53 +452,20 @@
       renderer.render(scene,camera);
     }
 
-    function spawnWave(){
-      spawnAsteroidInLane();
-      if(Math.random()<extraSpawnChance) spawnAsteroidInLane();
-    }
-    function spawnAsteroidInLane(){
-      const baseSize=0.6 + Math.min((level-1)*0.08,0.8);
-      const size=baseSize*(0.85+Math.random()*0.3);
-      const rock=createAsteroid(size);
-      const laneIndex=Math.floor(Math.random()*lanes.length);
-      rock.position.set(lanes[laneIndex],0,OBSTACLE_START_Z);
-      if(Math.random()<Math.min(0.05+level*0.01,0.25)) rock.userData.fast=true;
-      scene.add(rock); obstacles.push(rock);
-    }
+    function spawnWave(){ spawnAsteroidInLane(); if(Math.random()<extraSpawnChance) spawnAsteroidInLane(); }
+    function spawnAsteroidInLane(){ const baseSize=0.6 + Math.min((level-1)*0.08,0.8); const size=baseSize*(0.85+Math.random()*0.3); const rock=createAsteroid(size); const laneIndex=Math.floor(Math.random()*lanes.length); rock.position.set(lanes[laneIndex],0,OBSTACLE_START_Z); if(Math.random()<Math.min(0.05+level*0.01,0.25)) rock.userData.fast=true; scene.add(rock); obstacles.push(rock); }
 
     function updateLasers(dtMul){
       for(let li=lasers.length-1; li>=0; li--){
-        const L=lasers[li];
-        const prevZ = L.userData.prevZ ?? L.position.z;
-        L.position.z -= LASER_SPEED * dtMul;
-        if(L.position.z < OBSTACLE_START_Z - 20){
-          scene.remove(L); lasers.splice(li,1); continue;
-        }
-        let hitHandled = false;
+        const L=lasers[li]; const prevZ = L.userData.prevZ ?? L.position.z; L.position.z -= LASER_SPEED * dtMul;
+        if(L.position.z < OBSTACLE_START_Z - 20){ scene.remove(L); lasers.splice(li,1); continue; }
+        let hitHandled=false;
         for(let oi=obstacles.length-1; oi>=0; oi--){
-          const o=obstacles[oi];
-          const xL = L.position.x, xO = o.position.x;
-          const dx = xL - xO;
-          const zL0 = prevZ,          zL1 = L.position.z;
-          const zO0 = o.position.z;
-          const zSpeedO = (o.userData.fast? speed*1.4 : speed) * dtMul;
-          const zO1 = zO0 + zSpeedO;
-          const a = zL0 - zO0;
-          const b = (zL1 - zL0) - (zO1 - zO0);
-          const tStar = b !== 0 ? clamp01(-a / b) : 0;
-          const dzAtMin = a + b*tStar;
-          const effR = (o.userData.r ?? 0.5) + (LASER_SIZE.z*0.5) + 0.12;
-          const hit = (dx*dx + dzAtMin*dzAtMin) <= (effR*effR);
-          if(hit){
-            scene.remove(o); obstacles.splice(oi,1);
-            scene.remove(L); lasers.splice(li,1);
-            hitHandled = true;
-            score += POINTS_PER_ASTEROID_SHOT;
-            passedThisLevel++; totalPassed++;
-            if(phase==='play' && passedThisLevel>=targetThisLevel) beginLevelTransition();
-            updateHud();
-            break;
-          }
+          const o=obstacles[oi]; const xL=L.position.x, xO=o.position.x; const dx=xL-xO;
+          const zL0=prevZ, zL1=L.position.z; const zO0=o.position.z; const zSpeedO=(o.userData.fast? speed*1.4 : speed) * dtMul; const zO1=zO0+zSpeedO;
+          const a=zL0 - zO0; const b=(zL1 - zL0) - (zO1 - zO0); const tStar = b!==0 ? clamp01(-a/b) : 0; const dzAtMin = a + b*tStar;
+          const effR = (o.userData.r ?? 0.5) + (LASER_SIZE.z*0.5) + 0.12; const hit = (dx*dx + dzAtMin*dzAtMin) <= (effR*effR);
+          if(hit){ scene.remove(o); obstacles.splice(oi,1); scene.remove(L); lasers.splice(li,1); hitHandled=true; score += POINTS_PER_ASTEROID_SHOT; passedThisLevel++; totalPassed++; queuedShot++; if(phase==='play' && passedThisLevel>=targetThisLevel) beginLevelTransition(); updateHud(); break; }
         }
         if(!hitHandled){ L.userData.prevZ = L.position.z; }
       }
@@ -508,121 +473,40 @@
 
     function updateObstacles(dtMul){
       for(let i=obstacles.length-1; i>=0; i--){
-        const o=obstacles[i];
-        const zSpeed=(o.userData.fast? speed*1.4 : speed) * dtMul;
-        const z0 = o.position.z;
-        const z1 = z0 + zSpeed;
-        const pX = player.position.x, pZ = player.position.z;
-        const dist = distPointToSegment2D(pX, pZ, o.position.x, z0, o.position.x, z1);
-        const pR = getPlayerRadius();
-        const oR = (o.userData.r ?? 0.5);
-        const GRACE = 0.06;
-        if(dist <= Math.max(0, pR + oR - GRACE)){
-          return endGame();
-        }
-        o.position.z = z1;
-        o.rotation.x += (0.01 + speed*0.05) * dtMul;
-        o.rotation.y += (0.02 + speed*0.05) * dtMul;
-        if(o.position.z > DESPAWN_Z){
-          scene.remove(o); obstacles.splice(i,1);
-          score += POINTS_PER_ASTEROID_DODGED;
-          passedThisLevel++; totalPassed++;
-          if(phase==='play' && passedThisLevel>=targetThisLevel) beginLevelTransition();
-          updateHud();
-        }
+        const o=obstacles[i]; const zSpeed=(o.userData.fast? speed*1.4 : speed) * dtMul; const z0=o.position.z; const z1=z0+zSpeed;
+        const pX=player.position.x, pZ=player.position.z; const dist=distPointToSegment2D(pX,pZ,o.position.x,z0,o.position.x,z1);
+        const pR=getPlayerRadius(); const oR=(o.userData.r ?? 0.5); const GRACE=0.06;
+        if(dist <= Math.max(0, pR + oR - GRACE)) return endGame();
+        o.position.z = z1; o.rotation.x += (0.01 + speed*0.05) * dtMul; o.rotation.y += (0.02 + speed*0.05) * dtMul;
+        if(o.position.z > DESPAWN_Z){ scene.remove(o); obstacles.splice(i,1); score += POINTS_PER_ASTEROID_DODGED; passedThisLevel++; totalPassed++; queuedDodged++; if(phase==='play' && passedThisLevel>=targetThisLevel) beginLevelTransition(); updateHud(); }
       }
     }
 
-    function updateStars(dtMul){
-      const pos=starField.geometry.attributes.position.array;
-      for(let i=0;i<STAR_COUNT;i++){
-        const idx=i*3+2;
-        pos[idx] += speed * 1.5 * dtMul;
-        if(pos[idx]>5){
-          pos[idx] = -200 - Math.random()*100;
-          pos[i*3+0] = (Math.random()-0.5)*60;
-          pos[i*3+1] = (Math.random()-0.5)*40;
-        }
-      }
-      starField.geometry.attributes.position.needsUpdate=true;
-    }
+    function updateStars(dtMul){ const pos=starField.geometry.attributes.position.array; for(let i=0;i<STAR_COUNT;i++){ const idx=i*3+2; pos[idx] += speed * 1.5 * dtMul; if(pos[idx]>5){ pos[idx] = -200 - Math.random()*100; pos[i*3+0] = (Math.random()-0.5)*60; pos[i*3+1] = (Math.random()-0.5)*40; } } starField.geometry.attributes.position.needsUpdate=true; }
 
     function updateHud(){ scoreBoard.textContent=`Lvl ${level} • Score: ${score} • Lasers: ${laserAmmo}/${LASER_MAX}`; }
-    function showRowNotice(text){
-      rowNotice.textContent=text;
-      rowNotice.classList.remove('opacity-0'); rowNotice.classList.add('opacity-100');
-      if(rowNotice._timer) clearTimeout(rowNotice._timer);
-      rowNotice._timer=setTimeout(()=>{ rowNotice.classList.add('opacity-0'); rowNotice.classList.remove('opacity-100'); },1400);
-    }
+    function showRowNotice(text){ rowNotice.textContent=text; rowNotice.classList.remove('opacity-0'); rowNotice.classList.add('opacity-100'); if(rowNotice._timer) clearTimeout(rowNotice._timer); rowNotice._timer=setTimeout(()=>{ rowNotice.classList.add('opacity-0'); rowNotice.classList.remove('opacity-100'); },1400); }
     function beginLevelTransition(){ phase='transition_wait_clear'; }
 
     function nearestLaneIndex(x,arr=lanes){ let idx=0,best=Infinity; for(let i=0;i<arr.length;i++){ const d=Math.abs(arr[i]-x); if(d<best){best=d; idx=i;} } return idx; }
 
     function startClearCorridor(){
-      level++; passedThisLevel=0;
-      targetThisLevel=baseAsteroidsTarget + (level-1)*10;
-      laserAmmo=Math.min(LASER_MAX,laserAmmo+1);
+      level++; passedThisLevel=0; targetThisLevel=baseAsteroidsTarget + (level-1)*10; laserAmmo=Math.min(LASER_MAX,laserAmmo+1);
       toastLevel.textContent=level; levelToast.style.display='block'; setTimeout(()=>{ levelToast.style.display='none'; },1000);
-      const prevX=player.position.x;
-      let rowsAdded=0;
+      const prevX=player.position.x; let rowsAdded=0;
       if(level===4){ lanes=[-5,-2.5,0,2.5,5]; rowsAdded=2; }
       else if(level===10){ lanes=[-7.5,-5,-2.5,0,2.5,5,7.5]; rowsAdded=2; }
-      if(rowsAdded>0){ showRowNotice(`+${rowsAdded} Rows added`); currentLane=nearestLaneIndex(prevX,lanes); targetX=lanes[currentLane]; }
-      else{ targetX=lanes[currentLane]; }
-      applyLevelDifficulty();
-      corridorStartTime=performance.now(); phase='transition_corridor'; updateHud();
+      if(rowsAdded>0){ showRowNotice(`+${rowsAdded} Rows added`); currentLane=nearestLaneIndex(prevX,lanes); targetX=lanes[currentLane]; } else { targetX=lanes[currentLane]; }
+      applyLevelDifficulty(); corridorStartTime=performance.now(); phase='transition_corridor'; updateHud();
     }
 
-    function applyLevelDifficulty(){
-      const increments=Math.floor((level-1)/3);
-      speed=Math.min(0.2 + increments*0.015, 0.75);
-      spawnInterval=Math.max(24, 70 - (level-1)*4);
-      spawnEverySec=spawnInterval/REFERENCE_FPS;
-      extraSpawnChance=Math.min(0.05 + (level-1)*0.03, 0.45);
-    }
+    function applyLevelDifficulty(){ const increments=Math.floor((level-1)/3); speed=Math.min(0.2 + increments*0.015, 0.75); spawnInterval=Math.max(24, 70 - (level-1)*4); spawnEverySec=spawnInterval/REFERENCE_FPS; extraSpawnChance=Math.min(0.05 + (level-1)*0.03, 0.45); }
 
-    function endGame(){
-      gameOver=true;
-      finalScoreDisplay.textContent=`Score: ${score}`;
-      finalLevelDisplay.textContent=`Final Level: ${level}`;
-      hasSavedThisRun=false;
-      if(saveScoreButton){ saveScoreButton.disabled=false; saveScoreButton.textContent='Save Score'; saveScoreButton.classList.remove('opacity-60'); }
-      refreshLeaderboard();
-      gameOverModal.style.display='block';
-      instructions.style.display='none';
-    }
+    function endGame(){ gameOver=true; finalScoreDisplay.textContent=`Score: ${score}`; finalLevelDisplay.textContent=`Final Level: ${level}`; hasSavedThisRun=false; if(saveScoreButton){ saveScoreButton.disabled=false; saveScoreButton.textContent='Save Score'; saveScoreButton.classList.remove('opacity-60'); } refreshLeaderboard(); gameOverModal.style.display='block'; instructions.style.display='none'; }
 
-    function restart(){
-      gameStarted=true;
-      level=1; passedThisLevel=0; targetThisLevel=baseAsteroidsTarget; totalPassed=0;
-      score=0;
-      laserAmmo=3;
-      lasers.forEach(L=>scene.remove(L)); lasers=[];
-      speed=0.2; spawnInterval=70; spawnEverySec=spawnInterval/REFERENCE_FPS; spawnTimerSec=0;
-      extraSpawnChance=0.0;
-      phase='play'; corridorStartTime=0; frame=0; gameOver=false;
-      lanes=[-2.5,0,2.5]; currentLane=1; targetX=lanes[currentLane];
-      player.position.set(lanes[currentLane],0,PLAYER_Z); player.rotation.z=0;
-      obstacles.forEach(o=>scene.remove(o)); obstacles=[];
-      const pos=starField.geometry.attributes.position.array;
-      for(let i=0;i<STAR_COUNT;i++){
-        pos[i*3+0]=(Math.random()-0.5)*60;
-        pos[i*3+1]=(Math.random()-0.5)*40;
-        pos[i*3+2]=-Math.random()*200;
-      }
-      starField.geometry.attributes.position.needsUpdate=true;
-      rowNotice.textContent=''; rowNotice.classList.add('opacity-0'); rowNotice.classList.remove('opacity-100');
-      scoreBoard.textContent=`Lvl ${level} • Score: ${score} • Lasers: ${laserAmmo}/${LASER_MAX}`;
-      gameOverModal.style.display='none';
-      instructions.style.display='block';
-      lastTime=performance.now();
-    }
+    async function restart(){ gameOverModal.style.display='none'; await startGame(); }
 
-    function onResize(){
-      const w=gameContainer.clientWidth, h=gameContainer.clientHeight;
-      camera.aspect=w/h; camera.updateProjectionMatrix();
-      renderer.setSize(w,h);
-    }
+    function onResize(){ const w=gameContainer.clientWidth, h=gameContainer.clientHeight; camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h); }
   </script>
 </body>
 </html>
