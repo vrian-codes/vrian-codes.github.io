@@ -108,7 +108,6 @@
     // ===================== SERVER-AUTHORITATIVE SCORING =====================
     const API_BASE = '/api/session';
 
-// Turnstile (Invisible)
 const TURNSTILE_SITE_KEY = '0x4AAAAAABu-PtUy0saF714Z';
 let turnstileToken = '';
 let turnstileWidgetId = null;
@@ -117,7 +116,6 @@ window.onTurnstileVerified = (token) => { turnstileToken = token || ''; };
 
 function mountTurnstile() {
   if (turnstileWidgetId) return;
-  // Wait until the async/deferred script has loaded and provided window.turnstile
   if (!window.turnstile || typeof turnstile.render !== 'function') {
     setTimeout(mountTurnstile, 100);
     return;
@@ -129,7 +127,6 @@ function mountTurnstile() {
       callback: onTurnstileVerified,
       'error-callback': () => { turnstileToken = ''; }
     });
-    // optional: pre-prime a token
     try { turnstile.execute(turnstileWidgetId); } catch {}
   } catch (e) {
     console.error('Turnstile render failed', e);
@@ -137,22 +134,36 @@ function mountTurnstile() {
 }
 document.addEventListener('DOMContentLoaded', mountTurnstile);
 
-// Wait for (or refresh) a token when needed
-async function ensureTurnstileToken(timeoutMs = 4000){
-  if (turnstileToken) return turnstileToken;
-  if (window.turnstile && turnstileWidgetId) {
-    try { turnstile.execute(turnstileWidgetId); } catch {}
-  } else {
-    mountTurnstile();
-  }
-  const started = performance.now();
-  return await new Promise((resolve, reject) => {
-    const iv = setInterval(() => {
-      if (turnstileToken) { clearInterval(iv); resolve(turnstileToken); }
-      if (performance.now() - started > timeoutMs) { clearInterval(iv); reject(new Error('Turnstile timeout')); }
-    }, 100);
-  });
+let prewarmIv = null;
+function startPrewarm() {
+  if (prewarmIv) return;
+  prewarmIv = setInterval(() => {
+    const modal = document.getElementById('startModal');
+    if (!modal) return;
+    const visible = modal.style.display !== 'none';
+    if (visible && window.turnstile && turnstileWidgetId && !turnstileToken) {
+      try { turnstile.execute(turnstileWidgetId); } catch {}
+    }
+  }, 5000); 
 }
+function stopPrewarm() { if (prewarmIv) { clearInterval(prewarmIv); prewarmIv = null; } }
+document.addEventListener('visibilitychange', () => { if (!document.hidden) startPrewarm(); });
+startPrewarm();
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('startButton');
+  if (!btn) return;
+  btn.addEventListener('pointerenter', () => {
+    if (window.turnstile && turnstileWidgetId && !turnstileToken) {
+      try { turnstile.execute(turnstileWidgetId); } catch {}
+    }
+  });
+  btn.addEventListener('focus', () => {
+    if (window.turnstile && turnstileWidgetId && !turnstileToken) {
+      try { turnstile.execute(turnstileWidgetId); } catch {}
+    }
+  });
+});
 
     // Server session + batching state
     let serverSessionId = '';
@@ -327,62 +338,75 @@ async function ensureTurnstileToken(timeoutMs = 4000){
       gameCanvas.addEventListener('touchend',onTouchEnd,{passive:false});
 
       // Buttons
-      startButton.addEventListener('click', onStartClicked);
-      restartButton.addEventListener('click', ()=>{ restart().catch(console.error); });
-      saveScoreButton?.addEventListener('click', onSaveScoreGlobal);
+  startButton.addEventListener('click', () => {
+  startError.textContent = '';
+  startButton.disabled = true;
 
-      window.addEventListener('resize',onResize);
+  // Start the game immediately (no waiting)
+  startGameImmediate();
 
-      updateHud();
+  // Kick off server session in the background (no await)
+  startServerSession()
+    .catch(err => { console.warn('session start failed; will retry', err); })
+    .finally(() => { startButton.disabled = false; });
+});
+
+// Extracted: your original state reset from startGame(), without any Turnstile/API
+function startGameImmediate() {
+  gameStarted = true; gameOver = false;
+  lanes = [-2.5,0,2.5]; currentLane = 1; targetX = lanes[currentLane];
+
+  level = 1; passedThisLevel = 0; targetThisLevel = baseAsteroidsTarget; totalPassed = 0;
+  score = 0;
+
+  lasers.forEach(L => scene.remove(L)); lasers = [];
+  obstacles.forEach(o => scene.remove(o)); obstacles = [];
+  laserAmmo = 3;
+
+  speed = 0.2; spawnInterval = 70; spawnEverySec = spawnInterval/REFERENCE_FPS; spawnTimerSec = 0;
+  extraSpawnChance = 0.0;
+
+  phase = 'play'; corridorStartTime = 0; frame = 0;
+  player.position.set(lanes[currentLane], 0, PLAYER_Z); player.rotation.z = 0;
+  lastTime = performance.now();
+
+  instructions.style.display = 'block';
+  startModal.style.display = 'none';
+  stopPrewarm(); // stop token prewarm once we leave the modal
+  updateHud();
+
+  // Small hint if session not yet ready
+  serverSessionId = serverSessionId || ''; // ensure defined
+}
+
+// Background: get/refresh token if needed, then call /start; retry if it fails
+async function startServerSession() {
+  // Use any prewarmed token if we have one; else try to execute once
+  let token = turnstileToken;
+  if (!token && window.turnstile && turnstileWidgetId) {
+    try { turnstile.execute(turnstileWidgetId); } catch {}
+    // wait up to ~2s for a token
+    const t0 = performance.now();
+    while (!turnstileToken && performance.now() - t0 < 2000) {
+      await new Promise(r => setTimeout(r, 100));
     }
+    token = turnstileToken;
+  }
 
-    async function onStartClicked(){
-      startError.textContent = '';
-      startButton.disabled = true;
-      try{
-        await startGame();
-      }catch(err){
-        console.error(err);
-        startError.textContent = 'Could not start (verification/API). Check site key & routes.';
-      }finally{
-        startButton.disabled = false;
-      }
-    }
-
-   async function startGame(){
-  // ensure token
-      turnstileToken = '';
-        await ensureTurnstileToken(); // throws if it times out
-
-  // start the server session
-        const sess = await apiPost(`${API_BASE}/start`, { turnstileToken });
-        serverSessionId = sess.sessionId || '';
-        if (!serverSessionId) throw new Error('No session from API');
-
-  // reset token for next time
-        if (window.turnstile && turnstileWidgetId) turnstile.reset(turnstileWidgetId);
-          turnstileToken = '';
-
-      // ==== now actually initialize game state ====
-      gameStarted=true; gameOver=false;
-      lanes=[-2.5,0,2.5]; currentLane=1; targetX=lanes[currentLane];
-      level=1; passedThisLevel=0; targetThisLevel=baseAsteroidsTarget; totalPassed=0;
-      score=0;
-      lasers.forEach(L=>scene.remove(L)); lasers=[];
-      obstacles.forEach(o=>scene.remove(o)); obstacles=[];
-      laserAmmo=3;
-
-      speed=0.2; spawnInterval=70; spawnEverySec=spawnInterval/REFERENCE_FPS; spawnTimerSec=0;
-      extraSpawnChance=0.0;
-
-      phase='play'; corridorStartTime=0; frame=0;
-      player.position.set(lanes[currentLane],0,PLAYER_Z); player.rotation.z=0;
-      lastTime=performance.now();
-
-      instructions.style.display='block';
-      startModal.style.display='none';
-      updateHud();
-    }
+  // It's okay if token is still empty here—let's try; if 403, we’ll retry after a moment
+  try {
+    const sess = await apiPost(`${API_BASE}/start`, { turnstileToken: token || '' });
+    serverSessionId = sess.sessionId || '';
+    if (window.turnstile && turnstileWidgetId) turnstile.reset(turnstileWidgetId);
+    turnstileToken = '';
+    lastBatchAtMs = 0;
+  } catch (e) {
+    // Backoff & retry quietly while the player is already playing
+    await new Promise(r => setTimeout(r, 2000));
+    if (!serverSessionId && gameStarted && !gameOver) return startServerSession();
+    throw e;
+  }
+}
 
     function createShip(isPlayer=false){
       const group=new THREE.Group();
