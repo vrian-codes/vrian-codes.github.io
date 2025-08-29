@@ -484,14 +484,15 @@ async function ensureTurnstileToken(timeoutMs = 4000){
 
         updateLasers(dtMul); updateObstacles(dtMul);
 
-        // ---- batch send approx every 800ms ----
-        if(serverSessionId){
-          if(now - lastBatchAtMs > 800 && (queuedDodged||queuedShot||queuedLasersFired)){
-            const d=queuedDodged, s=queuedShot, l=queuedLasersFired; queuedDodged=queuedShot=queuedLasersFired=0; lastBatchAtMs = now;
-            apiPost(`${API_BASE}/batch`, { sessionId: serverSessionId, dodgedDelta:d, shotDelta:s, lasersFiredDelta:l, levelMax: level })
-              .catch(err=>{ console.error('batch failed',err); queuedDodged+=d; queuedShot+=s; queuedLasersFired+=l; });
-          }
-        }
+    if (serverSessionId) {
+     const needSend = (queuedDodged >= 5) || (queuedShot >= 1) || (queuedLasersFired >= 1);
+      if ((now - lastBatchAtMs > 10000) && needSend) {
+        const d=queuedDodged, s=queuedShot, l=queuedLasersFired;
+        queuedDodged=queuedShot=queuedLasersFired=0; lastBatchAtMs = now;
+        apiPost(`${API_BASE}/batch`, { sessionId: serverSessionId, dodgedDelta:d, shotDelta:s, lasersFiredDelta:l, levelMax: level })
+          .catch(err=>{ console.error('batch failed',err); queuedDodged+=d; queuedShot+=s; queuedLasersFired+=l; });
+  }
+}
       }
 
       camera.position.x = THREE.MathUtils.lerp(camera.position.x, player.position.x*0.5, 0.08);
