@@ -1,0 +1,54 @@
+:root {
+--bg: #0e0f12;
+--panel: #16181d;
+--muted: #9aa4b2;
+--text: #e7edf7;
+--accent: #00ff88;
+--border: #262a33;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+margin: 0;
+font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+background: var(--bg);
+color: var(--text);
+}
+.topbar {
+position: sticky; top: 0; z-index: 20;
+display: grid; grid-template-columns: auto 1fr auto; gap: 12px;
+align-items: center;
+padding: 10px; background: var(--panel); border-bottom: 1px solid var(--border);
+}
+.brand { font-weight: 600; letter-spacing: 1px; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tool { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+.tool input[type="range"] { width: 120px; }
+.btn {
+background: #1f232b; border: 1px solid var(--border); color: var(--text);
+padding: 8px 10px; border-radius: 10px; cursor: pointer; transition: transform .05s;
+}
+.btn:active { transform: translateY(1px); }
+.btn[aria-pressed="true"], .btn.primary { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.post-box { display: flex; gap: 8px; align-items: center; }
+.post-box input {
+background: #101217; border: 1px solid var(--border); border-radius: 10px; color: var(--text);
+padding: 8px 10px; min-width: 180px;
+}
+.stage-wrap { height: calc(100dvh - 120px); padding: 10px; }
+#board {
+width: 100%; height: 100%; display: block; background: #0a0c10;
+border: 1px solid var(--border); border-radius: 12px;
+background-image: radial-gradient(#10141b 1px, transparent 1px);
+background-size: 16px 16px; background-position: 0 0;
+touch-action: none;         /* critical: let pointer/touch events reach JS instead of scrolling/zooming */
+user-select: none;
+-webkit-user-select: none;
+}
+.footer { display: flex; justify-content: center; padding: 10px; color: var(--muted); }
+.footer a { color: var(--accent); text-decoration: none; }
+@media (max-width: 880px) {
+.topbar { grid-template-columns: 1fr; align-items: start; gap: 10px; }
+.tools { order: 2; }
+.post-box { order: 3; flex-wrap: wrap; }
+}
