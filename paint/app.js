@@ -26,8 +26,38 @@
     undo: [],
     redo: [],
     maxHistory: 40,
-    dpr: Math.max(1, Math.min(3, window.devicePixelRatio || 1))
+    dpr: Math.max(1, Math.min(3, window.devicePixelRatio || 1)),
+    hasDrawn: false   // <-- new: tracks if a fresh stroke exists since last reset
   };
+
+  // --- helpers: posting availability + reset ---
+  function updatePostAvailability() {
+    if (!postBtn) return;
+    // Only allow posting if user has drawn since last reset
+    postBtn.disabled = !state.hasDrawn;
+  }
+
+  function resetAll(clearInputs = true) {
+    // clear canvas & history
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    state.undo = [];
+    state.redo = [];
+    state.drawing = false;
+    state.erasing = false;
+    state.hasDrawn = false;
+    if (eraserBtn) eraserBtn.setAttribute('aria-pressed', 'false');
+
+    // reset UI bits
+    if (postBtn) {
+      postBtn.textContent = 'Post to Gallery';
+      postBtn.disabled = true;
+    }
+    if (clearInputs) {
+      if (captionEl) captionEl.value = '';
+      if (authorEl) authorEl.value = '';
+    }
+    updatePostAvailability();
+  }
 
   function setSizeLabel() {
     if (sizeVal) sizeVal.textContent = state.strokeSize;
@@ -41,7 +71,7 @@
       state[pushTo].push(img);
       if (state[pushTo].length > state.maxHistory) state[pushTo].shift();
     } catch (e) {
-      // Cross-origin or memory limits; ignore gracefully
+      // ignore memory/cross-origin issues
     }
   }
 
@@ -62,32 +92,26 @@
     const h = Math.max(1, Math.floor(rect.height * dpr));
     if (canvas.width === w && canvas.height === h) return;
 
-    // preserve current pixels
     const prev = document.createElement('canvas');
     prev.width = canvas.width; prev.height = canvas.height;
     const pctx = prev.getContext('2d');
     if (prev.width && prev.height) pctx.drawImage(canvas, 0, 0);
 
-    // set new size & reset transform
     canvas.width = w; canvas.height = h;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.imageSmoothingEnabled = true;
 
-    // restore previous pixels scaled
     if (prev.width && prev.height) {
       ctx.drawImage(prev, 0, 0, prev.width, prev.height, 0, 0, w, h);
     }
   }
 
   window.addEventListener('load', fitCanvas);
-  if ('ResizeObserver' in window) {
-    new ResizeObserver(fitCanvas).observe(canvas);
-  }
+  if ('ResizeObserver' in window) new ResizeObserver(fitCanvas).observe(canvas);
   window.addEventListener('resize', fitCanvas, { passive: true });
 
-  // quick sanity log
   setTimeout(() => {
     console.log('canvas backing store:', canvas.width, 'x', canvas.height, '@dpr', state.dpr);
   }, 0);
@@ -126,7 +150,7 @@
 
   function startStroke(e) {
     state.drawing = true;
-    state.redo = []; // new branch on new stroke
+    state.redo = []; // new branch
     snapshot('undo');
 
     if (hasPointer && typeof canvas.setPointerCapture === 'function' && e.pointerId != null) {
@@ -136,10 +160,14 @@
     const { x, y, p } = posFromEvent(e);
     state.lastX = x; state.lastY = y;
 
-    // First tap should produce a visible mark
+    // First mark
     const lw = Math.max(0.5, state.strokeSize * (hasPointer ? p : 1));
     ctx.lineWidth = lw;
     drawDot(x, y);
+
+    // Mark as fresh drawing → allow posting
+    state.hasDrawn = true;
+    updatePostAvailability();
   }
 
   function moveStroke(e) {
@@ -197,7 +225,12 @@
   }
   if (undoBtn) undoBtn.addEventListener('click', () => restore('undo', 'redo'));
   if (redoBtn) redoBtn.addEventListener('click', () => restore('redo', 'undo'));
-  if (clearBtn) clearBtn.addEventListener('click', () => { snapshot('undo'); ctx.clearRect(0, 0, canvas.width, canvas.height); });
+  if (clearBtn) clearBtn.addEventListener('click', () => {
+    snapshot('undo');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    state.hasDrawn = false;
+    updatePostAvailability();
+  });
 
   // ---- Shortcuts ----
   window.addEventListener('keydown', (e) => {
@@ -223,7 +256,9 @@
 
   // ---- Post to gallery ----
   if (postBtn) {
+    updatePostAvailability(); // disable initially until a stroke happens
     postBtn.addEventListener('click', async () => {
+      if (!state.hasDrawn) return; // guard
       postBtn.disabled = true; postBtn.textContent = 'Posting…';
       try {
         const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
@@ -239,14 +274,34 @@
         if (!r.ok) throw new Error(`Upload failed (${r.status})`);
         await r.json();
 
+        // mark just-posted so if BFCache restore happens, we know to reset
+        try { sessionStorage.setItem('paint.justPosted', '1'); } catch (_) {}
+
         postBtn.textContent = 'Posted! View Gallery';
-        setTimeout(() => { window.location.href = '/paint/gallery.html'; }, 700);
+        state.hasDrawn = false; // consider “not dirty” anymore
+        setTimeout(() => { window.location.href = '/paint/gallery.html'; }, 600);
       } catch (err) {
         alert(err.message || 'Failed to post');
         postBtn.textContent = 'Post to Gallery';
-      } finally {
-        postBtn.disabled = false;
+        updatePostAvailability(); // re-enable based on hasDrawn
       }
     });
   }
+
+  // ---- Clear on Back / BFCache restore ----
+  // When coming back from gallery via Back, browsers often restore the page from BFCache.
+  // Use `pageshow` to detect that and reset the canvas + disable posting.
+  window.addEventListener('pageshow', (e) => {
+    const nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+    const backOrBF = (e.persisted === true) || (nav && nav.type === 'back_forward');
+    const flagged = (() => { try { return sessionStorage.getItem('paint.justPosted') === '1'; } catch(_) { return false; } })();
+
+    if (backOrBF || flagged) {
+      resetAll(true);
+      try { sessionStorage.removeItem('paint.justPosted'); } catch(_) {}
+    } else {
+      // Fresh load: still ensure Post is disabled until a new stroke
+      updatePostAvailability();
+    }
+  });
 })();
