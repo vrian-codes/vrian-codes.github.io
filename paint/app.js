@@ -271,7 +271,7 @@
         fd.append('caption', (captionEl?.value || '').slice(0, 100));
 
         const r = await fetch(`${API_BASE}/publish`, { method: 'POST', body: fd });
-        if (!r.ok) throw new Error(`Upload failed (${r.status})`);
+        if (!r.ok) throw new Error(`Please wait 1 minute before posting again. (${r.status})`);
         await r.json();
 
         // mark just-posted so if BFCache restore happens, we know to reset
@@ -305,4 +305,5 @@
     }
   });
 })();
+
 
