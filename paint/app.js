@@ -279,7 +279,7 @@
 
         postBtn.textContent = 'Posted! View Gallery';
         state.hasDrawn = false; // consider “not dirty” anymore
-        setTimeout(() => { window.location.href = '/paint/gallery.html'; }, 600);
+        setTimeout(() => { window.location.href = '/paint/gallery'; }, 600);
       } catch (err) {
         alert(err.message || 'Failed to post');
         postBtn.textContent = 'Post to Gallery';
@@ -305,3 +305,4 @@
     }
   });
 })();
+
