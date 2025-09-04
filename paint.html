@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>vrians.world — Paint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="paintstyles.css" />
+</head>
+<body>
+<header class="topbar">
+<div class="brand">PAINT</div>
+<div class="tools">
+<label class="tool">
+Color
+<input id="color" type="color" value="#00ff88" />
+</label>
+<label class="tool">
+Size
+<input id="size" type="range" min="1" max="60" value="10" />
+<span id="sizeVal">10</span>
+</label>
+<button id="eraser" class="btn" aria-pressed="false">Eraser</button>
+<button id="undo" class="btn" title="Undo (Ctrl/Cmd+Z)">Undo</button>
+<button id="redo" class="btn" title="Redo (Ctrl/Cmd+Shift+Z)">Redo</button>
+<button id="clear" class="btn">Clear</button>
+<button id="download" class="btn">Download PNG</button>
+</div>
+<div class="post-box">
+<input id="author" type="text" placeholder="Name (optional)" maxlength="32" />
+<input id="caption" type="text" placeholder="Caption (optional)" maxlength="100" />
+<button id="post" class="btn primary">Post to Gallery</button>
+</div>
+</header>
+
+
+<main class="stage-wrap">
+<canvas id="board" aria-label="Drawing canvas" role="img"></canvas>
+</main>
+
+
+<footer class="footer">
+<a href="gallery.html">View Gallery →</a>
+</footer>
+
+
+<script src="app.js" defer></script>
+</body>
+</html>
