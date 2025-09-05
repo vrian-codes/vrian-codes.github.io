@@ -7,90 +7,113 @@
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="bg-black text-green-400 font-mono p-4">
+<body class="bg-black text-green-400 font-mono">
 
-  <div class="flex gap-8 max-w-screen-xl w-full">
+  <div class="container">
+    <div class="layout">
 
-    <div class="flex-shrink-0">
-      <iframe src="ansi.html" width="800" height="800" style="transform: scale(0.5); transform-origin: center right;"></iframe>
+      <!-- Responsive ANSI preview -->
+      <div class="ansi-wrap">
+        <!--
+          The iframe scales to the available width while keeping a 1:1 ratio.
+          No fixed pixel sizing, no transform hacks.
+        -->
+        <iframe
+          class="responsive-iframe"
+          src="ansi.html"
+          title="ansi preview"
+          loading="lazy"
+        ></iframe>
+      </div>
+
+      <!-- Text/content column -->
+      <div class="content-col space-y-4">
+        <h1 class="text-2xl md:text-3xl font-bold">hi i'm vrian</h1>
+
+        <p>
+          a mobile device manager and system admin at
+          <span class="bg-green-800 text-black px-1">[REDACTED]</span>
+        </p>
+
+        <p>
+          <a href="https://www.x.com/vriannn" class="underline text-blue-400">X</a>
+          <span class="text-sm mx-2">|</span>
+          <a href="https://www.github.com" class="underline text-blue-400">Git</a>
+          <span class="text-sm mx-2">|</span>
+          <a href="#" class="underline text-blue-400"></a>
+        </p>
+
+        <p class="italic text-green-300">
+          "I love to touch computer all day for money "
+        </p>
+
+        <div class="marquee">
+          <div class="animate-marquee text-[#40e07d] text-sm font-mono">
+            <span class="mr-16">THE WORLD IS OURS     THE WORLD IS OURS     THE WORLD IS OURS     THE WORLD IS OURS    THE WORLD IS OURS     THE WORLD IS OURS     THE WORLD IS OURS     THE WORLD IS OURS    THE WORLD IS OURS    </span>
+          </div>
+        </div>
+
+        <h2 class="text-xl md:text-2xl font-bold">projects</h2>
+
+        <div>
+          <span class="font-bold">CS KNOWLEDGE BASE</span>
+          <span class="badge-online">ONLINE</span>
+          <p class="text-sm ml-2">Customer Service Knowledge Base</p>
+          <p class="text-xs ml-2 text-green-300">launched Wed May 7 2025</p>
+        </div>
+
+        <div>
+          <span class="bg-green-800 text-black px-0.5">[REDACTED]</span><span class="font-bold"> CHAT BOT</span>
+          <span class="badge-wip">IN DEV</span>
+          <p class="text-sm ml-2">Chat bot for company website</p>
+          <p class="text-xs ml-2 text-green-300">started Thurs May 15 2024</p>
+        </div>
+
+        <div>
+          <span class="font-bold">vrians.world</span>
+          <span class="badge-wip">IN DEV</span>
+          <p class="text-sm ml-2">Personal website</p>
+          <p class="text-xs ml-2 text-green-300">started Thurs Mar 14 2024</p>
+        </div>
+
+        <div>
+          <span class="font-bold">HR Sharepoint Site</span>
+          <span class="badge-wip">IN DEV</span>
+          <p class="text-sm ml-2">Front facing HR SharePoint site for new employees</p>
+          <p class="text-xs ml-2 text-green-300">started Thurs Jun 29 2025</p>
+        </div>
+
+        <pre class="divider text-[#40e07d]/30 text-sm mt-10 mb-6">────────────────────────────────────────────</pre>
+
+        <div class="mt-10">
+          <h2 class="text-xl md:text-2xl font-bold">file explorer</h2>
+
+          <div>
+            <a href="./commandprompt/commandprompt.html" class="font-bold underline">command prompt</a>
+            <p class="text-sm ml-2">text-based user interface to execute commands</p>
+          </div>
+
+          <div>
+            <span class="font-bold underline">pictures</span>
+            <p class="text-xs ml-2">photo library</p>
+          </div>
+
+          <div>
+            <a href="./asteroidglider/index.html" class="font-bold underline">asteroid glider</a>
+            <p class="text-xs ml-2">dodge asteroids and shoot threats for the top score</p>
+          </div>
+
+          <div>
+            <a href="./paint/index.html" class="font-bold underline">paint</a>
+            <p class="text-xs ml-2">draw and paint on vrians world</p>
+          </div>
+        </div>
+      </div>
+      <!-- /content-col -->
     </div>
-
-    <div class="md:w-1/2 space-y-4">
-      <h1 class="text-xl font-bold">hi i'm vrian</h1>
-      <p>
-        a mobile device manager and system admin at 
-        <span class="bg-green-800 text-black px-1">[REDACTED]</span>
-      </p>
-
-      <p>
-        <a href="#" class="underline text-blue-400">X</a>
-        <span class="text-sm ml-2">|</span>
-        <a href="#" class="underline text-blue-400">Git</a>
-        <span class="text-sm ml-2">|</span>
-        <a href="#" class="underline text-blue-400"></a>
-      </p>
-
-      <p class="italic text-green-300">
-        "I love to touch computer all day for money "
-      </p>
-
-<div class="w-full overflow-hidden whitespace-nowrap">
-  <div class="animate-marquee inline-block text-[#40e07d] text-sm font-mono">
-    <span class="mr-16">THE WORLD IS OURS     THE WORLD IS OURS     THE WORLD IS OURS     THE WORLD IS OURS    THE WORLD IS OURS     THE WORLD IS OURS     THE WORLD IS OURS     THE WORLD IS OURS    THE WORLD IS OURS    </span>
+    <!-- /layout -->
   </div>
-</div>
-
-      <h2 class="text-lg font-bold">projects</h2>
-
-      <div>
-        <span class="font-bold">CS KNOWLEDGE BASE</span> 
-        <span class="bg-green-700 text-black text-xs px-2 py-0.5 rounded">ONLINE</span>
-        <p class="text-sm ml-2">Customer Service Knowledge Base</p>
-        <p class="text-xs ml-2 text-green-300">launched Wed May 7 2025</p>
-      </div>
-      <div>
-        <span class="bg-green-800 text-black px-0.5">[REDACTED]</span><span class="font-bold"> CHAT BOT</span>
-        <span class="bg-yellow-500 text-black text-xs px-2 py-0.5 rounded">IN DEV</span>
-        <p class="text-sm ml-2">Chat bot for company website</p>
-        <p class="text-xs ml-2 text-green-300">started Thurs May 15 2024</p>
-      </div>
-      <div>
-        <span class="font-bold">vrians.world</span> 
-        <span class="bg-yellow-500 text-black text-xs px-2 py-0.5 rounded">IN DEV</span>
-        <p class="text-sm ml-2">Personal website</p>
-        <p class="text-xs ml-2 text-green-300">started Thurs Mar 14 2024</p>
-      </div>
-      <div>
-        <span class="font-bold">HR Sharepoint Site</span> 
-        <span class="bg-yellow-500 text-black text-xs px-2 py-0.5 rounded">IN DEV</span>
-        <p class="text-sm ml-2">Front facing HR SharePoint site for new employees</p>
-        <p class="text-xs ml-2 text-green-300">started Thurs Jun 29 2025</p>
-      </div>
-      <pre class="text-[#40e07d]/30 text-sm mt-10 mb-6">────────────────────────────────────────────</pre>
-<div class="mt-10">
-      <h2 class="text-lg font-bold">file explorer</h2>
-      <div>
-        <a href="/commandprompt" class="font-bold underline">command prompt</a>
-        <p class="text-sm ml-2">text-based user interface to execute commands </p>
-      </div>
-      <div>
-        <span class="font-bold, underline">pictures</span>
-        <p class="text-xs ml-2">photo library</p>
-      </div>
-
-      <div>
-        <a href="/asteroidglider" class="font-bold underline">asteroid glider</a>
-        <p class="text-xs ml-2">dodge asteroids and shoot threats for the top score</p>
-      </div>
-      <div>
-        <a href="/paint" class="font-bold underline">paint</a>
-        <p class="text-xs ml-2">draw and paint on vrians world</p>
-      </div>
-    </div>
-
-    </div>
-  </div>
-  
+  <!-- /container -->
 
 </body>
 </html>
