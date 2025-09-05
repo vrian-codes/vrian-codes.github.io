@@ -3,17 +3,18 @@
 <style>
     :root {
       --ansi-cols: 226;
-      --ansi-rows: 125;   /* longest line in characters */
-      --ansi-max: 3px;       /* upper cap (desktop) */
-      --ansi-min: 1.2px;     /* lower cap (tiny screens) */
+      --ansi-rows: 125;
+      --ansi-max: 3px;       
+      --ansi-min: 1.2px;    
     }
     html, body {
       margin: 0;
       background: transparent;
+      height:100%;
     }
     body {
       display: grid;
-      place-items: center;   /* center the art inside the iframe */
+      place-items: center;
       width: 100%;
       height: 100dvh;
     }
@@ -25,7 +26,7 @@
         min(calc(100vw / var(--ansi-cols)), calc(100dvh / var(--ansi-rows))),
         var(--ansi-max)
         );
-      line-height: 1;      /* keep "square" pixels */
+      line-height: 1;   
       white-space: pre;
       margin: 0;
     }
