@@ -38,7 +38,7 @@ html, body {
 .responsive-iframe {
   display: block;
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 226 / 125;
   border: 0;
   background: #000;
   border-radius: 8px;
