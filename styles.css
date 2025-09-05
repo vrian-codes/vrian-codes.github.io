@@ -34,11 +34,11 @@ html, body {
   max-width: 560px;            /* comfortable desktop cap */
 }
 
-/* Truly responsive iframe: fills width and keeps 1:1 aspect */
+/* Truly responsive iframe: fills width and keeps ANSI aspect */
 .responsive-iframe {
   display: block;
   width: 100%;
-  aspect-ratio: 226 / 125;
+  aspect-ratio: 226 / 125; /* was 1 / 1 → this caused the stretch */
   border: 0;
   background: #000;
   border-radius: 8px;
