@@ -2,7 +2,8 @@
 <head>
 <style>
     :root {
-      --ansi-cols: 226;   /* longest line in characters */
+      --ansi-cols: 226;
+      --ansi-rows: 125;   /* longest line in characters */
       --ansi-max: 3px;       /* upper cap (desktop) */
       --ansi-min: 1.2px;     /* lower cap (tiny screens) */
     }
@@ -14,13 +15,17 @@
       display: grid;
       place-items: center;   /* center the art inside the iframe */
       width: 100vw;
-      height: 100vh;
+      height: 100dvh;
     }
     pre {
-      color: #34d399;
+      color: #2ad385;
       font-family: monospace;
-      font-size: clamp(var(--ansi-min), calc(100vw / var(--ansi-cols)), var(--ansi-max));
-      line-height: 1em;      /* keep "square" pixels */
+      font-size: clamp(
+        var(--ansi-min), 
+        min(calc(100vw / var(--ansi-cols)), calc(100dvh / var(--ansi-rows))),
+        var(--ansi-max)
+        );
+      line-height: 1;      /* keep "square" pixels */
       white-space: pre;
       margin: 0;
     }
