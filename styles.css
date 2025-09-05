@@ -31,14 +31,14 @@ html, body {
 /* Left column: ANSI iframe wrapper */
 .ansi-wrap {
   width: 100%;
-  max-width: 560px;            /* comfortable desktop cap */
+  max-width: 560px;         
 }
 
 /* Truly responsive iframe: fills width and keeps ANSI aspect */
 .responsive-iframe {
   display: block;
   width: 100%;
-  aspect-ratio: 226 / 125; /* was 1 / 1 → this caused the stretch */
+  aspect-ratio: 226 / 125;
   border: 0;
   background: #000;
   border-radius: 8px;
@@ -47,12 +47,12 @@ html, body {
 /* Right column should take available space and not overflow */
 .content-col {
   flex: 1 1 0%;
-  min-width: 0;                /* prevents flex overflow */
+  min-width: 0;               
 }
 
 /* Badges */
 .badge-online {
-  background: #16a34a; /* green-600 */
+  background: #16a34a;
   color: #000;
   font-size: 0.75rem;
   padding: 0.125rem 0.5rem;
@@ -60,7 +60,7 @@ html, body {
   margin-left: 0.5rem;
 }
 .badge-wip {
-  background: #f59e0b; /* yellow-500 */
+  background: #f59e0b; 
   color: #000;
   font-size: 0.75rem;
   padding: 0.125rem 0.5rem;
