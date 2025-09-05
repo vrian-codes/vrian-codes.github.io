@@ -35,15 +35,14 @@ html, body {
 }
 
 /* Truly responsive iframe: fills width and keeps ANSI aspect */
-.responsive-iframe {
-  display: block;
-  width: 100%;
-  aspect-ratio: 226 / 125;
-  border: 0;
-  background: #000;
-  border-radius: 8px;
+.responsive-iframe{
+  display:block;
+  width:100%;
+  aspect-ratio: calc(226 / (125 * 0.62));
+  border:0;
+  background:#000;
+  border-radius:8px;
 }
-
 html { -webkit-text-size-adjust: 100%; }
 
 /* Right column should take available space and not overflow */
