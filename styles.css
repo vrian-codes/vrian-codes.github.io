@@ -44,6 +44,8 @@ html, body {
   border-radius: 8px;
 }
 
+html { -webkit-text-size-adjust: 100%; }
+
 /* Right column should take available space and not overflow */
 .content-col {
   flex: 1 1 0%;
