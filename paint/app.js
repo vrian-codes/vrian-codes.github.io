@@ -13,7 +13,6 @@
   const authorEl = document.getElementById('author');
   const captionEl = document.getElementById('caption');
 
-  // Same-origin Worker route
   const API_BASE = '/api/paint';
 
   const state = {
@@ -27,18 +26,19 @@
     redo: [],
     maxHistory: 40,
     dpr: Math.max(1, Math.min(3, window.devicePixelRatio || 1)),
-    hasDrawn: false   // <-- new: tracks if a fresh stroke exists since last reset
+    hasDrawn: false
   };
 
-  // --- helpers: posting availability + reset ---
+  // --- helpers: author validity + post gating + reset ---
+  const authorOk = () => !!(authorEl && authorEl.value.trim().length > 0);
+
   function updatePostAvailability() {
     if (!postBtn) return;
-    // Only allow posting if user has drawn since last reset
-    postBtn.disabled = !state.hasDrawn;
+    // Require BOTH a new drawing and a non-empty name
+    postBtn.disabled = !(state.hasDrawn && authorOk());
   }
 
   function resetAll(clearInputs = true) {
-    // clear canvas & history
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     state.undo = [];
     state.redo = [];
@@ -46,12 +46,7 @@
     state.erasing = false;
     state.hasDrawn = false;
     if (eraserBtn) eraserBtn.setAttribute('aria-pressed', 'false');
-
-    // reset UI bits
-    if (postBtn) {
-      postBtn.textContent = 'Post to Gallery';
-      postBtn.disabled = true;
-    }
+    if (postBtn) { postBtn.textContent = 'Post to Gallery'; }
     if (clearInputs) {
       if (captionEl) captionEl.value = '';
       if (authorEl) authorEl.value = '';
@@ -59,9 +54,7 @@
     updatePostAvailability();
   }
 
-  function setSizeLabel() {
-    if (sizeVal) sizeVal.textContent = state.strokeSize;
-  }
+  function setSizeLabel() { if (sizeVal) sizeVal.textContent = state.strokeSize; }
   setSizeLabel();
 
   // ---- History ----
@@ -70,9 +63,7 @@
       const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
       state[pushTo].push(img);
       if (state[pushTo].length > state.maxHistory) state[pushTo].shift();
-    } catch (e) {
-      // ignore memory/cross-origin issues
-    }
+    } catch {}
   }
 
   function restore(from = 'undo', to = 'redo') {
@@ -81,7 +72,7 @@
       const img = state[from].pop();
       state[to].push(ctx.getImageData(0, 0, canvas.width, canvas.height));
       ctx.putImageData(img, 0, 0);
-    } catch (e) {}
+    } catch {}
   }
 
   // ---- Canvas sizing ----
@@ -111,7 +102,6 @@
   window.addEventListener('load', fitCanvas);
   if ('ResizeObserver' in window) new ResizeObserver(fitCanvas).observe(canvas);
   window.addEventListener('resize', fitCanvas, { passive: true });
-
   setTimeout(() => {
     console.log('canvas backing store:', canvas.width, 'x', canvas.height, '@dpr', state.dpr);
   }, 0);
@@ -122,16 +112,12 @@
   function posFromEvent(e) {
     const rect = canvas.getBoundingClientRect();
     let clientX, clientY, pressure = 1;
-
     if (e.touches && e.touches[0]) {
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
+      clientX = e.touches[0].clientX; clientY = e.touches[0].clientY;
     } else {
-      clientX = e.clientX;
-      clientY = e.clientY;
+      clientX = e.clientX; clientY = e.clientY;
       if (typeof e.pressure === 'number' && e.pressure > 0) pressure = e.pressure;
     }
-
     const x = (clientX - rect.left) * state.dpr;
     const y = (clientY - rect.top) * state.dpr;
     return { x, y, p: pressure };
@@ -150,22 +136,20 @@
 
   function startStroke(e) {
     state.drawing = true;
-    state.redo = []; // new branch
+    state.redo = [];
     snapshot('undo');
 
     if (hasPointer && typeof canvas.setPointerCapture === 'function' && e.pointerId != null) {
-      try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+      try { canvas.setPointerCapture(e.pointerId); } catch {}
     }
 
     const { x, y, p } = posFromEvent(e);
     state.lastX = x; state.lastY = y;
 
-    // First mark
     const lw = Math.max(0.5, state.strokeSize * (hasPointer ? p : 1));
     ctx.lineWidth = lw;
     drawDot(x, y);
 
-    // Mark as fresh drawing → allow posting
     state.hasDrawn = true;
     updatePostAvailability();
   }
@@ -192,7 +176,7 @@
   function endStroke(e) {
     state.drawing = false;
     if (hasPointer && typeof canvas.releasePointerCapture === 'function' && e?.pointerId != null) {
-      try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+      try { canvas.releasePointerCapture(e.pointerId); } catch {}
     }
   }
 
@@ -201,7 +185,6 @@
     canvas.addEventListener('pointermove', moveStroke, { passive: false });
     window.addEventListener('pointerup', endStroke);
   } else {
-    // Fallback (older Safari)
     canvas.addEventListener('mousedown', startStroke);
     canvas.addEventListener('mousemove', moveStroke);
     window.addEventListener('mouseup', endStroke);
@@ -211,12 +194,8 @@
   }
 
   // ---- Tools ----
-  if (colorEl) {
-    colorEl.addEventListener('input', e => { state.strokeColor = e.target.value; });
-  }
-  if (sizeEl) {
-    sizeEl.addEventListener('input', e => { state.strokeSize = +e.target.value; setSizeLabel(); });
-  }
+  if (colorEl) colorEl.addEventListener('input', e => { state.strokeColor = e.target.value; });
+  if (sizeEl)  sizeEl.addEventListener('input', e => { state.strokeSize = +e.target.value; setSizeLabel(); });
   if (eraserBtn) {
     eraserBtn.addEventListener('click', () => {
       state.erasing = !state.erasing;
@@ -231,6 +210,13 @@
     state.hasDrawn = false;
     updatePostAvailability();
   });
+
+  // ---- React to name changes (enable/disable Post) ----
+  if (authorEl) {
+    const onAuthor = () => updatePostAvailability();
+    authorEl.addEventListener('input', onAuthor);
+    authorEl.addEventListener('change', onAuthor);
+  }
 
   // ---- Shortcuts ----
   window.addEventListener('keydown', (e) => {
@@ -256,41 +242,47 @@
 
   // ---- Post to gallery ----
   if (postBtn) {
-    updatePostAvailability(); // disable initially until a stroke happens
+    updatePostAvailability(); // init disabled until both conditions are met
     postBtn.addEventListener('click', async () => {
-      if (!state.hasDrawn) return; // guard
+      if (!(state.hasDrawn && authorOk())) {
+        alert('Please enter your name and draw something before posting.');
+        updatePostAvailability();
+        return;
+      }
       postBtn.disabled = true; postBtn.textContent = 'Posting…';
       try {
         const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
         if (!blob) throw new Error('Could not export image');
         if (blob.size > 5 * 1024 * 1024) throw new Error('Image too large (>5MB)');
 
+        const authorVal = authorEl.value.trim().slice(0, 32);
+        const captionVal = (captionEl?.value || '').slice(0, 100);
+
         const fd = new FormData();
         fd.append('file', blob, 'art.png');
-        fd.append('author', (authorEl?.value || '').slice(0, 32));
-        fd.append('caption', (captionEl?.value || '').slice(0, 100));
+        fd.append('author', authorVal);
+        fd.append('caption', captionVal);
 
         const r = await fetch(`${API_BASE}/publish`, { method: 'POST', body: fd });
-        if (!r.ok) throw new Error(`Please wait 1 minute before posting again. (${r.status})`);
+        if (!r.ok) throw new Error(`Upload failed (${r.status})`);
         await r.json();
 
-        // mark just-posted so if BFCache restore happens, we know to reset
-        try { sessionStorage.setItem('paint.justPosted', '1'); } catch (_) {}
+        try { sessionStorage.setItem('paint.justPosted', '1'); } catch {}
 
         postBtn.textContent = 'Posted! View Gallery';
-        state.hasDrawn = false; // consider “not dirty” anymore
+        state.hasDrawn = false;
         setTimeout(() => { window.location.assign('/paint/gallery/'); }, 600);
       } catch (err) {
         alert(err.message || 'Failed to post');
         postBtn.textContent = 'Post to Gallery';
-        updatePostAvailability(); // re-enable based on hasDrawn
+        updatePostAvailability();
+      } finally {
+        // keep disabled state managed by updatePostAvailability
       }
     });
   }
 
   // ---- Clear on Back / BFCache restore ----
-  // When coming back from gallery via Back, browsers often restore the page from BFCache.
-  // Use `pageshow` to detect that and reset the canvas + disable posting.
   window.addEventListener('pageshow', (e) => {
     const nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
     const backOrBF = (e.persisted === true) || (nav && nav.type === 'back_forward');
@@ -300,11 +292,7 @@
       resetAll(true);
       try { sessionStorage.removeItem('paint.justPosted'); } catch(_) {}
     } else {
-      // Fresh load: still ensure Post is disabled until a new stroke
       updatePostAvailability();
     }
   });
 })();
-
-
-
