@@ -1,56 +1,124 @@
+/* Global base */
 html, body {
-    background-color: #0c0c0c;
-    color: #cccccc;
-    font-family: 'Courier New', monospace;
-    padding: 20px;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-}
-#output {
-    white-space: pre-wrap;
-}
-#inputLine {
-    display: flex;
-    align-items: center;
-}
-#prompt {
-    margin-right: 5px;
-}
-#input {
-    color: #cccccc;
-    background-color: #0c0c0c;
-    border: none;
-    outline: none;
-    width: 100%;
-    font-family: 'Courier New', monospace;
-}
-#small-font {
-    font-size: 8px;
-  }
-  
-  #help-text {
-    font-size: 3.0em;
+  background-color: #0c0c0c;
+  color: #cccccc;
+  font-family: 'Courier New', monospace;
+  margin: 0;
+  height: 100%;
+  overflow-x: hidden; /* prevent horizontal scroll on small screens */
 }
 
-@media only screen and (max-width: 900px) {
-    #help-text {
-        font-size: 3.0em;
-    }
+/* Container centers content and adds safe padding */
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 16px;
 }
+
+/* Two-column layout that stacks on small screens */
+.layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+@media (max-width: 1024px) {
+  .layout { gap: 1.25rem; }
+}
+@media (max-width: 768px) {
+  .layout { flex-direction: column; }
+}
+
+/* Left column: ANSI iframe wrapper */
+.ansi-wrap {
+  width: 100%;
+  max-width: 560px;            /* comfortable desktop cap */
+}
+
+/* Truly responsive iframe: fills width and keeps 1:1 aspect */
+.responsive-iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border: 0;
+  background: #000;
+  border-radius: 8px;
+}
+
+/* Right column should take available space and not overflow */
+.content-col {
+  flex: 1 1 0%;
+  min-width: 0;                /* prevents flex overflow */
+}
+
+/* Badges */
+.badge-online {
+  background: #16a34a; /* green-600 */
+  color: #000;
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  margin-left: 0.5rem;
+}
+.badge-wip {
+  background: #f59e0b; /* yellow-500 */
+  color: #000;
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  margin-left: 0.5rem;
+}
+
+/* Divider */
+.divider {
+  opacity: 0.6;
+}
+
+/* Marquee */
+.marquee {
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.animate-marquee {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee 18s linear infinite;
+}
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+/* Terminal styles carried over */
+#output {
+  white-space: pre-wrap;
+}
+#inputLine {
+  display: flex;
+  align-items: center;
+}
+#prompt {
+  margin-right: 5px;
+}
+#input {
+  color: #cccccc;
+  background-color: #0c0c0c;
+  border: none;
+  outline: none;
+  width: 100%;
+  font-family: 'Courier New', monospace;
+}
+#small-font { font-size: 8px; }
+#help-text { font-size: 3.0em; }
+
 @media only screen and (max-width: 900px) {
-    #output {
+  #help-text { font-size: 2.25em; }
+  #output {
     font-family: 'Courier New', Courier, monospace;
-    white-space: pre; 
+    white-space: pre;
     word-wrap: break-word;
-    font-size: 0.7em;
-}
-    #prompt {
-        margin-right: 0.7em;
-        font-size: 0.7em;
-    }
-    #input {
-        font-size: 0.7em;
-    }
+    font-size: 0.9em;
+  }
+  #prompt { margin-right: 0.7em; font-size: 0.9em; }
+  #input  { font-size: 0.9em; }
 }
