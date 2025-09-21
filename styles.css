@@ -1,21 +1,19 @@
 /* Global base */
-html, body {
+html, body { max-width: 100%; overflow-x: hidden;
   background-color: #0c0c0c;
   color: #cccccc;
   font-family: 'Courier New', monospace;
   margin: 0;
   height: 100%;
-  overflow-x: hidden; /* prevent horizontal scroll on small screens */
+  overflow-x: hidden; 
 }
 
-/* Container centers content and adds safe padding */
 .container {
   max-width: 1280px;
   margin: 0 auto;
   padding: 16px;
 }
 
-/* Two-column layout that stacks on small screens */
 .layout {
   display: flex;
   gap: 2rem;
@@ -28,13 +26,11 @@ html, body {
   .layout { flex-direction: column; }
 }
 
-/* Left column: ANSI iframe wrapper */
 .ansi-wrap {
   width: 100%;
   max-width: 560px;         
 }
 
-/* Truly responsive iframe: fills width and keeps ANSI aspect */
 .responsive-iframe{
   display:block;
   width:100%;
@@ -45,13 +41,11 @@ html, body {
 }
 html { -webkit-text-size-adjust: 100%; }
 
-/* Right column should take available space and not overflow */
-.content-col {
+.content-col, .content-col * { overflow-wrap: anywhere; word-break: break-word;
   flex: 1 1 0%;
   min-width: 0;               
 }
 
-/* Badges */
 .badge-online {
   background: #16a34a;
   color: #000;
@@ -69,13 +63,11 @@ html { -webkit-text-size-adjust: 100%; }
   margin-left: 0.5rem;
 }
 
-/* Divider */
 .divider {
   opacity: 0.6;
 }
 
-/* Marquee */
-.marquee {
+.marquee { overflow: hidden;
   width: 100%;
   overflow: hidden;
   white-space: nowrap;
@@ -90,7 +82,6 @@ html { -webkit-text-size-adjust: 100%; }
   100% { transform: translateX(-100%); }
 }
 
-/* Terminal styles carried over */
 #output {
   white-space: pre-wrap;
 }
